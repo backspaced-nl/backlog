@@ -48,6 +48,7 @@ export default function EditProjectPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [screenshotError, setScreenshotError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProject = async () => {
@@ -78,6 +79,18 @@ export default function EditProjectPage() {
         });
         setExistingTags(Array.from(allTags));
         setExistingPartners(Array.from(allPartners));
+
+        // Check for success message in localStorage
+        const successMessage = localStorage.getItem('adminSuccessMessage');
+        if (successMessage) {
+          setMessage(successMessage);
+          // Clear message from localStorage
+          localStorage.removeItem('adminSuccessMessage');
+          // Clear message after 3 seconds
+          setTimeout(() => {
+            setMessage('');
+          }, 3000);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -128,10 +141,10 @@ export default function EditProjectPage() {
         throw new Error('Failed to update project');
       }
 
-      setMessage('Project updated successfully!');
-      setTimeout(() => {
-        router.push('/admin');
-      }, 1500);
+      // Store success message in localStorage
+      localStorage.setItem('adminSuccessMessage', 'Project updated successfully');
+      // Redirect to admin page
+      router.push('/admin');
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -220,7 +233,7 @@ export default function EditProjectPage() {
   const generateScreenshot = async () => {
     try {
       setIsGeneratingScreenshot(true);
-      setError(null);
+      setScreenshotError(null);
 
       const response = await fetch('/api/screenshots/single', {
         method: 'POST',
@@ -234,7 +247,8 @@ export default function EditProjectPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate screenshot');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to generate screenshot');
       }
 
       // Start polling for job status
@@ -258,27 +272,30 @@ export default function EditProjectPage() {
             setMessage('Screenshot generated successfully!');
             setImageKey(prev => prev + 1); // Force image component to remount
             setIsGeneratingScreenshot(false);
+            
+            // Clear any existing error
+            setScreenshotError(null);
           } else if (statusData.status === 'failed') {
             clearInterval(pollInterval);
-            throw new Error('Screenshot generation failed');
+            throw new Error(statusData.error || 'Screenshot generation failed');
           }
         } catch (err) {
           clearInterval(pollInterval);
           throw err;
         }
-      }, 1000); // Poll every second
+      }, 1000);
 
       // Clear interval after 2 minutes to prevent infinite polling
       setTimeout(() => {
         clearInterval(pollInterval);
         if (isGeneratingScreenshot) {
           setIsGeneratingScreenshot(false);
-          setError('Screenshot generation timed out');
+          setScreenshotError('Screenshot generation timed out');
         }
       }, 120000);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setScreenshotError(err instanceof Error ? err.message : 'An error occurred');
       setIsGeneratingScreenshot(false);
     }
   };
@@ -367,7 +384,8 @@ export default function EditProjectPage() {
     );
   }
 
-  if (error) {
+  // Only show error view for critical errors (loading project)
+  if (error && !screenshotError) {
     return (
       <div className="min-h-screen">
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -400,10 +418,8 @@ export default function EditProjectPage() {
         </div>
 
         {message && (
-          <div className={`mb-4 p-4 rounded ${
-            message.includes('success') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-          }`}>
-            {message}
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm text-green-600">{message}</p>
           </div>
         )}
 
@@ -535,7 +551,7 @@ export default function EditProjectPage() {
                       {project.tags.map(tag => (
                         <span
                           key={tag}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 whitespace-nowrap"
                         >
                           {tag}
                           <button
@@ -655,10 +671,10 @@ export default function EditProjectPage() {
                 />
               </div>
 
-              {project.screenshotError && (
+              {screenshotError && (
                 <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-600">
-                    Screenshot generation failed: {project.screenshotError}
+                    Screenshot generation failed: {screenshotError}
                   </p>
                 </div>
               )}
