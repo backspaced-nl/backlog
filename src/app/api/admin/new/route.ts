@@ -3,10 +3,9 @@ import { v4 as uuidv4 } from "uuid";
 import fs from "fs/promises";
 import path from "path";
 import puppeteer from "puppeteer";
-import sharp from "sharp";
+import { generateSingleScreenshot } from "@/utils/screenshot";
 
 const projectsFilePath = path.join(process.cwd(), "src/data/projects.json");
-const screenshotsDir = path.join(process.cwd(), "public/screenshots");
 
 export async function POST(request: Request) {
   let browser;
@@ -32,7 +31,6 @@ export async function POST(request: Request) {
       tags: [],
       partner: '',
       screenshotLocked: false, // Start unlocked
-      screenshotError: null as string | null, // Add error field with explicit type
       createdAt: new Date().toISOString(),
     };
 
@@ -44,82 +42,54 @@ export async function POST(request: Request) {
       });
       
       const page = await browser.newPage();
-      await page.setViewport({ 
-        width: 1440, 
-        height: 2000,
-        deviceScaleFactor: 1
-      });
-      
-      await page.goto(data.url, { 
-        waitUntil: 'domcontentloaded', // Use domcontentloaded for faster title fetch
-        timeout: 10000
-      });
+      try {
+        await page.goto(data.url, { 
+          waitUntil: 'domcontentloaded', // Use domcontentloaded for faster title fetch
+          timeout: 10000
+        });
+      } catch (gotoError) {
+        console.error('Detailed page.goto error:', {
+          url: data.url,
+          error: gotoError,
+          message: gotoError instanceof Error ? gotoError.message : 'Unknown error',
+          stack: gotoError instanceof Error ? gotoError.stack : undefined,
+          name: gotoError instanceof Error ? gotoError.name : 'Unknown error type'
+        });
+        throw gotoError;
+      }
 
       // Get the website title
       const title = await page.title();
       newProject.title = title;
+      await page.close();
 
-      // Now try to generate screenshot
+      // Now try to generate screenshot using the shared function
       try {
-        // Elements to hide before taking screenshot
-        const elementsToHide = [
-          '#cookiescript_injected_wrapper',
-          '.cky-consent-container',
-          // Add more selectors here as needed
-        ];
-
-        // Hide specified elements
-        await page.evaluate((selectors) => {
-          selectors.forEach(selector => {
-            const elements = document.querySelectorAll(selector);
-            elements.forEach(element => {
-              (element as HTMLElement).style.display = 'none';
-            });
-          });
-        }, elementsToHide);
-
-        const fullHeight = await page.evaluate(() => {
-          return Math.max(
-            document.documentElement.scrollHeight,
-            document.body.scrollHeight
-          );
-        });
-
-        // Ensure screenshots directory exists
-        await fs.mkdir(screenshotsDir, { recursive: true });
-        
-        // Take screenshot
-        const screenshotBuffer = await page.screenshot({
-          type: 'jpeg',
-          quality: 80,
-          clip: {
-            x: 0,
-            y: 0,
-            width: 1440,
-            height: Math.min(fullHeight, 2000)
-          }
-        });
-
-        // Process the screenshot with sharp
-        await sharp(screenshotBuffer)
-          .resize(600, 800, {
-            fit: 'cover',
-            position: 'top'
-          })
-          .toFile(path.join(screenshotsDir, `${projectId}.jpg`));
-        
-        // Only lock if screenshot was generated successfully
+        await generateSingleScreenshot({ id: projectId, url: data.url });
         newProject.screenshotLocked = true;
-        newProject.screenshotError = null;
       } catch (screenshotError) {
         console.error('Error generating screenshot:', screenshotError);
         newProject.screenshotLocked = false;
-        newProject.screenshotError = screenshotError instanceof Error ? screenshotError.message : 'Failed to generate screenshot';
+        // Return error response but still create the project
+        return NextResponse.json(
+          { 
+            ...newProject,
+            error: screenshotError instanceof Error ? screenshotError.message : 'Failed to generate screenshot'
+          },
+          { status: 201 }
+        );
       }
     } catch (error) {
       console.error('Error accessing website:', error);
       newProject.screenshotLocked = false;
-      newProject.screenshotError = error instanceof Error ? error.message : 'Failed to access website';
+      // Return error response but still create the project
+      return NextResponse.json(
+        { 
+          ...newProject,
+          error: error instanceof Error ? error.message : 'Failed to access website'
+        },
+        { status: 201 }
+      );
     } finally {
       if (browser) {
         await browser.close();

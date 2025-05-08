@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generateSingleScreenshot } from '@/utils/screenshot';
 
-interface Project {
-  id: string;
-  url: string;
-}
-
 export async function POST(request: Request) {
   try {
     const { projectId, url } = await request.json();
