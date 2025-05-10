@@ -235,7 +235,7 @@ export default function EditProjectPage() {
       setIsGeneratingScreenshot(true);
       setScreenshotError(null);
 
-      const response = await fetch('/api/screenshots/single', {
+      const response = await fetch('/api/screenshots/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -251,51 +251,16 @@ export default function EditProjectPage() {
         throw new Error(data.error || 'Failed to generate screenshot');
       }
 
-      // Start polling for job status
-      const jobId = `single-${project.id}`;
-      const pollInterval = setInterval(async () => {
-        try {
-          const statusResponse = await fetch(`/api/screenshots/status?jobId=${jobId}`);
-          if (!statusResponse.ok) {
-            throw new Error('Failed to check screenshot status');
-          }
-
-          const statusData = await statusResponse.json();
-          
-          if (statusData.status === 'completed') {
-            clearInterval(pollInterval);
-            
-            // Wait a moment to ensure the file is written
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Show success message and force image reload
-            setMessage('Screenshot generated successfully!');
-            setImageKey(prev => prev + 1); // Force image component to remount
-            setIsGeneratingScreenshot(false);
-            
-            // Clear any existing error
-            setScreenshotError(null);
-          } else if (statusData.status === 'failed') {
-            clearInterval(pollInterval);
-            throw new Error(statusData.error || 'Screenshot generation failed');
-          }
-        } catch (err) {
-          clearInterval(pollInterval);
-          throw err;
-        }
-      }, 1000);
-
-      // Clear interval after 2 minutes to prevent infinite polling
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        if (isGeneratingScreenshot) {
-          setIsGeneratingScreenshot(false);
-          setScreenshotError('Screenshot generation timed out');
-        }
-      }, 120000);
-
+      // Wait a moment to ensure the file is written
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Show success message and force image reload
+      setMessage('Screenshot generated successfully!');
+      setImageKey(prev => prev + 1); // Force image component to remount
+      setScreenshotError(null);
     } catch (err) {
       setScreenshotError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
       setIsGeneratingScreenshot(false);
     }
   };

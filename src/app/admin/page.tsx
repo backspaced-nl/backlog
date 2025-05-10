@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Project } from '@/types/project';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
@@ -9,16 +9,9 @@ import { PartnerSelect } from '@/components/PartnerSelect';
 import { TagDisplay } from '@/components/TagDisplay';
 import { ProjectCard } from '@/components/ProjectCard';
 
-interface ScreenshotJob {
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  message?: string;
-}
-
 function AdminContent() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [screenshotJob, setScreenshotJob] = useState<ScreenshotJob | null>(null);
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -64,26 +57,8 @@ function AdminContent() {
     }
   };
 
-  const checkForExistingJob = useCallback(async () => {
-    try {
-      const response = await fetch('/api/admin/screenshots/status');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.job) {
-          setScreenshotJob(data.job);
-          if (data.job.status === 'pending' || data.job.status === 'processing') {
-            startPolling();
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error checking for existing job:', error);
-    }
-  }, []);
-
   useEffect(() => {
     loadProjects();
-    checkForExistingJob();
 
     // Check for success message in localStorage
     const message = localStorage.getItem('adminSuccessMessage');
@@ -96,42 +71,7 @@ function AdminContent() {
         setSuccessMessage(null);
       }, 3000);
     }
-
-    // Cleanup interval on unmount
-    return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-      }
-    };
-  }, [checkForExistingJob, pollingInterval]);
-
-  useEffect(() => {
-    if (screenshotJob?.status === 'completed' || screenshotJob?.status === 'failed') {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-        setPollingInterval(null);
-      }
-      // Remove the job after 3 seconds to show completion message
-      setTimeout(() => {
-        setScreenshotJob(null);
-      }, 3000);
-    }
-  }, [screenshotJob?.status, pollingInterval]);
-
-  const startPolling = () => {
-    const interval = setInterval(async () => {
-      try {
-        const response = await fetch('/api/admin/screenshots/status');
-        if (response.ok) {
-          const data = await response.json();
-          setScreenshotJob(data.job);
-        }
-      } catch (error) {
-        console.error('Error polling job status:', error);
-      }
-    }, 2000);
-    setPollingInterval(interval);
-  };
+  }, []);
 
   const handleDelete = async (id: string) => {
     setProjectToDelete(id);
@@ -204,25 +144,6 @@ function AdminContent() {
         {successMessage && (
           <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
             <p className="text-sm text-green-800">{successMessage}</p>
-          </div>
-        )}
-
-        {screenshotJob && (
-          <div className={`mb-6 p-4 rounded-lg border ${
-            screenshotJob.status === 'failed' ? 'bg-red-50 border-red-200' :
-            screenshotJob.status === 'completed' ? 'bg-green-50 border-green-200' :
-            'bg-blue-50 border-blue-200'
-          }`}>
-            <p className={`text-sm ${
-              screenshotJob.status === 'failed' ? 'text-red-800' :
-              screenshotJob.status === 'completed' ? 'text-green-800' :
-              'text-blue-800'
-            }`}>
-              {screenshotJob.status === 'pending' && 'Starting screenshot generation...'}
-              {screenshotJob.status === 'processing' && 'Generating screenshots...'}
-              {screenshotJob.status === 'completed' && 'Screenshots generated successfully!'}
-              {screenshotJob.status === 'failed' && `Screenshot generation failed: ${screenshotJob.message}`}
-            </p>
           </div>
         )}
 

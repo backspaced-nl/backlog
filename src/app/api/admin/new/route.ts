@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import fs from "fs/promises";
 import path from "path";
 import { withPage } from "@/utils/puppeteer";
-import { generateSingleScreenshot } from "@/utils/screenshot";
+import { generateScreenshot } from "@/utils/screenshot";
 
 const projectsFilePath = path.join(process.cwd(), "src/data/projects.json");
 
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 
       // Now try to generate screenshot using the shared function
       try {
-        await generateSingleScreenshot({ id: projectId, url: data.url });
+        await generateScreenshot({ id: projectId, url: data.url });
         newProject.screenshotLocked = true;
       } catch (screenshotError) {
         console.error('Error generating screenshot:', screenshotError);

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateSingleScreenshot } from '@/utils/screenshot';
+import { generateScreenshot } from '@/utils/screenshot';
 
 export async function POST(request: Request) {
   try {
@@ -7,15 +7,15 @@ export async function POST(request: Request) {
 
     if (!projectId || !url) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: projectId and url are required' },
         { status: 400 }
       );
     }
 
-    await generateSingleScreenshot({ id: projectId, url });
+    await generateScreenshot({ id: projectId, url });
 
     return NextResponse.json(
-      { message: 'Screenshot generation started' },
+      { message: 'Screenshot generated successfully' },
       { status: 200 }
     );
   } catch (error) {
