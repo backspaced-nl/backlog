@@ -1,7 +1,7 @@
-import puppeteer from 'puppeteer';
 import sharp from 'sharp';
 import fs from 'fs/promises';
 import path from 'path';
+import { withPage } from './puppeteer';
 
 interface Project {
   id: string;
@@ -42,58 +42,54 @@ async function updateJobStatus(jobId: string, status: Partial<JobStatus>) {
 }
 
 async function generateScreenshotForProject(project: Project, jobId: string, progress: number) {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
-
   try {
-    const page = await browser.newPage();
-    await page.setViewport({ 
-      width: 1440, 
-      height: 2000,
-      deviceScaleFactor: 1
-    });
-    
-    // Navigate to the page and wait for network to be idle
-    await page.goto(project.url, { 
-      waitUntil: 'domcontentloaded',
-      timeout: 30000
-    });
-
-    // Elements to hide before taking screenshot
-    const elementsToHide = [
-      '#cookiescript_injected_wrapper',
-      '.cky-consent-container',
-      // Add more selectors here as needed
-    ];
-
-    // Hide specified elements
-    await page.evaluate((selectors) => {
-      selectors.forEach(selector => {
-        const elements = document.querySelectorAll(selector);
-        elements.forEach(element => {
-          (element as HTMLElement).style.display = 'none';
-        });
+    const screenshotBuffer = await withPage(async (page) => {
+      await page.setViewport({ 
+        width: 1440, 
+        height: 2000,
+        deviceScaleFactor: 1
       });
-    }, elementsToHide);
+      
+      // Navigate to the page and wait for network to be idle
+      await page.goto(project.url, { 
+        waitUntil: 'domcontentloaded',
+        timeout: 30000
+      });
 
-    const fullHeight = await page.evaluate(() => {
-      return Math.max(
-        document.documentElement.scrollHeight,
-        document.body.scrollHeight
-      );
-    });
+      // Elements to hide before taking screenshot
+      const elementsToHide = [
+        '#cookiescript_injected_wrapper',
+        '.cky-consent-container',
+        // Add more selectors here as needed
+      ];
 
-    const screenshotBuffer = await page.screenshot({
-      type: 'jpeg',
-      quality: 80,
-      clip: {
-        x: 0,
-        y: 0,
-        width: 1440,
-        height: Math.min(fullHeight, 2000)
-      }
+      // Hide specified elements
+      await page.evaluate((selectors) => {
+        selectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(element => {
+            (element as HTMLElement).style.display = 'none';
+          });
+        });
+      }, elementsToHide);
+
+      const fullHeight = await page.evaluate(() => {
+        return Math.max(
+          document.documentElement.scrollHeight,
+          document.body.scrollHeight
+        );
+      });
+
+      return page.screenshot({
+        type: 'jpeg',
+        quality: 80,
+        clip: {
+          x: 0,
+          y: 0,
+          width: 1440,
+          height: Math.min(fullHeight, 2000)
+        }
+      });
     });
 
     const screenshotsDir = path.join(process.cwd(), 'public', 'screenshots');
@@ -106,13 +102,10 @@ async function generateScreenshotForProject(project: Project, jobId: string, pro
       })
       .toFile(path.join(screenshotsDir, `${project.id}.jpg`));
 
-    await page.close();
     await updateJobStatus(jobId, { progress });
   } catch (error) {
     console.error(`Error generating screenshot for ${project.url}:`, error);
     throw error;
-  } finally {
-    await browser.close();
   }
 }
 
