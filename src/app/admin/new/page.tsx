@@ -27,17 +27,12 @@ export default function NewProjectPage() {
         body: JSON.stringify({ url }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create project');
+        throw new Error('Failed to create project');
       }
 
-      // Store success message in localStorage
-      localStorage.setItem('adminSuccessMessage', 'Project created successfully');
-      
-      // Redirect to edit page immediately
-      router.push(`/admin/edit/${data.id}`);
+      const data = await response.json();
+      router.replace(`/admin/edit/${data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {

@@ -144,7 +144,7 @@ export default function EditProjectPage() {
       // Store success message in localStorage
       localStorage.setItem('adminSuccessMessage', 'Project updated successfully');
       // Redirect to admin page
-      router.push('/admin');
+      router.replace('/admin');
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -363,8 +363,10 @@ export default function EditProjectPage() {
         throw new Error(data.error || 'Failed to delete project');
       }
 
-      // Redirect immediately to admin page with success message
-      router.push('/admin?message=Project deleted successfully');
+      // Store success message in localStorage
+      localStorage.setItem('adminSuccessMessage', 'Project deleted successfully');
+      // Redirect to admin page
+      router.replace('/admin');
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : 'An error occurred');
     } finally {

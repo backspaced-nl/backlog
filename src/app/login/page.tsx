@@ -17,8 +17,12 @@ export default function LoginPage() {
       .then(res => res.json())
       .then(data => {
         if (data.isAuthenticated) {
-          router.push('/admin');
+          // Use replace instead of push to prevent back button issues
+          router.replace('/admin');
         }
+      })
+      .catch(error => {
+        console.error('Auth check failed:', error);
       });
   }, [router]);
 
@@ -64,7 +68,8 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        router.push('/admin');
+        // Use replace instead of push to prevent back button issues
+        router.replace('/admin');
       } else {
         setError(data.error || 'Invalid PIN');
         // Clear PIN on error
