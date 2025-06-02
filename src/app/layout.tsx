@@ -17,6 +17,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="light">
+      <head>
+        <meta name="robots" content="noindex,nofollow" />
+      </head>
       <body className={`${inter.className} bg-gray-50`}>
         <Navbar />
         {children}
