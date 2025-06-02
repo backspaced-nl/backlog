@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
-import { Project } from '@/types/project';
 import { SearchInput } from '@/components/SearchInput';
 import { PartnerSelect } from '@/components/PartnerSelect';
 import { TagDisplay } from '@/components/TagDisplay';
@@ -11,7 +10,7 @@ import { ProjectCard } from '@/components/ProjectCard';
 import { useProjectsApi } from '@/hooks/useProjectsApi';
 
 export default function Home() {
-  const { projects, fetchProjects, loading, error } = useProjectsApi();
+  const { projects, fetchProjects } = useProjectsApi();
   const { isAuthenticated } = useAuth();
   
   const {

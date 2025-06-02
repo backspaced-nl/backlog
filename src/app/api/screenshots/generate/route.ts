@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await generateScreenshot({ id: projectId, url });
+    await generateScreenshot({ id: projectId, url, title: '', tags: [] });
 
     return NextResponse.json(
       { message: 'Screenshot generated successfully' },

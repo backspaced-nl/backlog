@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase, projectFromDb, projectToDb } from '@/utils/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { getScreenshotUrl } from '@/utils/screenshot';
 
 export async function GET() {
   const { data, error } = await supabase
@@ -11,8 +12,11 @@ export async function GET() {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  // Map all projects to camelCase
-  const projects = (data || []).map(projectFromDb);
+  // Map all projects to camelCase and add screenshotUrl
+  const projects = (data || []).map((p) => {
+    const project = projectFromDb(p);
+    return project ? { ...project, screenshotUrl: getScreenshotUrl(project.id) } : project;
+  });
   return NextResponse.json({ projects });
 }
 
@@ -87,8 +91,12 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-    // Return camelCase project
-    return NextResponse.json(projectFromDb(inserted), { status: 201 });
+    // Return camelCase project with screenshotUrl
+    const project = projectFromDb(inserted);
+    return NextResponse.json(
+      project ? { ...project, screenshotUrl: getScreenshotUrl(project.id) } : project,
+      { status: 201 }
+    );
   } catch (error) {
     // Catch-all error
     console.error('Error creating project:', error);
@@ -123,8 +131,13 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   const { id } = await request.json();
+  // Delete screenshot from Supabase Storage
+  const { error: storageError } = await supabase.storage.from('screenshots').remove([`${id}.jpg`]);
+  if (storageError) {
+    // Log but do not block project deletion if screenshot removal fails
+    console.error('Error deleting screenshot from Supabase:', storageError.message);
+  }
   const { error } = await supabase.from('projects').delete().eq('id', id);
-
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

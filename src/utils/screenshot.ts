@@ -1,10 +1,11 @@
 import sharp from 'sharp';
-import fs from 'fs/promises';
-import path from 'path';
 import { withPage } from './puppeteer';
+import { supabase } from './supabase';
 import type { Project } from '@/types/project';
 
-async function generateScreenshotForProject(project: Project) {
+const BUCKET = 'screenshots';
+
+export async function generateScreenshot(project: Project) {
   try {
     const screenshotBuffer = await withPage(async (page) => {
       await page.setViewport({ 
@@ -55,26 +56,27 @@ async function generateScreenshotForProject(project: Project) {
       });
     });
 
-    const screenshotsDir = path.join(process.cwd(), 'public', 'screenshots');
-    await fs.mkdir(screenshotsDir, { recursive: true });
+    // Process with sharp
+    const processedImage = await sharp(screenshotBuffer)
+      .resize(600, 800, { fit: 'cover', position: 'top' })
+      .jpeg({ quality: 80 })
+      .toBuffer();
 
-    await sharp(screenshotBuffer)
-      .resize(600, 800, {
-        fit: 'cover',
-        position: 'top'
-      })
-      .toFile(path.join(screenshotsDir, `${project.id}.jpg`));
+    // Upload to Supabase Storage
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(`${project.id}.jpg`, processedImage, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+    if (error) throw error;
   } catch (error) {
-    console.error(`Error generating screenshot for ${project.url}:`, error);
+    console.error(`Error generating/uploading screenshot for ${project.url}:`, error);
     throw error;
   }
 }
 
-export async function generateScreenshot(project: Project) {
-  try {
-    await generateScreenshotForProject(project);
-  } catch (error) {
-    console.error('Error in generateScreenshot:', error);
-    throw error;
-  }
+export function getScreenshotUrl(projectId: string) {
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(`${projectId}.jpg`);
+  return data.publicUrl;
 } 

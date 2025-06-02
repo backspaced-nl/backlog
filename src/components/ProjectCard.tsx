@@ -42,8 +42,8 @@ export function ProjectCard({
         >
           <div className="relative w-full" style={{ paddingBottom: '133.33%' }}>
             <Image
-              src={`/screenshots/${project.id}.jpg?t=${project.updatedAt}`}
-              alt={project.title}
+              src={project.screenshotUrl || ``}
+              alt={`${project.title} screenshot`}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
               onError={(e) => {
@@ -54,6 +54,8 @@ export function ProjectCard({
                   parent.style.backgroundColor = '#f3f4f6';
                 }
               }}
+              priority
+              unoptimized
             />
           </div>
           <div className="p-6 flex flex-col h-full">

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import path from 'path';
 import sharp from 'sharp';
+import { supabase } from '@/utils/supabase';
 
 export async function POST(request: Request) {
   try {
@@ -35,10 +34,19 @@ export async function POST(request: Request) {
       })
       .toBuffer();
 
-    // Save the processed image
-    const screenshotsDir = path.join(process.cwd(), 'public', 'screenshots');
-    const filePath = path.join(screenshotsDir, `${projectId}.jpg`);
-    await writeFile(filePath, processedImage);
+    // Upload to Supabase Storage
+    const { error } = await supabase.storage
+      .from('screenshots')
+      .upload(`${projectId}.jpg`, processedImage, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+    if (error) {
+      return NextResponse.json(
+        { error: 'Failed to upload screenshot to Supabase' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       { message: 'Screenshot uploaded successfully' },

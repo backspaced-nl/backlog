@@ -9,4 +9,5 @@ export interface Project {
   screenshotError?: string | null;
   updatedAt?: string;
   createdAt?: string;
+  screenshotUrl?: string;
 } 

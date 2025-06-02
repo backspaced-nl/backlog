@@ -600,7 +600,7 @@ export default function EditProjectPage() {
               <div className="relative aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden">
                 <Image
                   key={imageKey}
-                  src={`/screenshots/${project.id}.jpg?t=${Date.now()}`}
+                  src={project.screenshotUrl || ''}
                   alt={`${project.title} screenshot`}
                   fill
                   className="w-full h-full object-contain"

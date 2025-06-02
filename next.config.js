@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['placehold.co'],
+    domains: [
+      process.env.NEXT_PUBLIC_SUPABASE_STORAGE_DOMAIN,
+    ].filter(Boolean), // filter out undefined if env is missing
   },
 }
 
