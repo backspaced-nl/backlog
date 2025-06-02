@@ -2,11 +2,7 @@ import sharp from 'sharp';
 import fs from 'fs/promises';
 import path from 'path';
 import { withPage } from './puppeteer';
-
-interface Project {
-  id: string;
-  url: string;
-}
+import type { Project } from '@/types/project';
 
 async function generateScreenshotForProject(project: Project) {
   try {

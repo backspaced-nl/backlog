@@ -2,23 +2,21 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Project } from '@/types/project';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { SearchInput } from '@/components/SearchInput';
 import { PartnerSelect } from '@/components/PartnerSelect';
 import { TagDisplay } from '@/components/TagDisplay';
 import { ProjectCard } from '@/components/ProjectCard';
+import { useProjectsApi } from '@/hooks/useProjectsApi';
 
 function AdminContent() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const { projects, fetchProjects, deleteProject, error } = useProjectsApi();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const searchParams = useSearchParams();
-
   const {
     filteredProjects,
     searchQuery,
@@ -43,22 +41,8 @@ function AdminContent() {
     }
   }, [searchParams]);
 
-  const loadProjects = async () => {
-    try {
-      setError(null);
-      const response = await fetch('/api/projects');
-      if (!response.ok) {
-        throw new Error('Failed to load projects');
-      }
-      const data = await response.json();
-      setProjects(data.projects);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    }
-  };
-
   useEffect(() => {
-    loadProjects();
+    fetchProjects();
 
     // Check for success message in localStorage
     const message = localStorage.getItem('adminSuccessMessage');
@@ -71,7 +55,7 @@ function AdminContent() {
         setSuccessMessage(null);
       }, 3000);
     }
-  }, []);
+  }, [fetchProjects]);
 
   const handleDelete = async (id: string) => {
     setProjectToDelete(id);
@@ -81,35 +65,16 @@ function AdminContent() {
 
   const confirmDelete = async () => {
     if (!projectToDelete) return;
-    
     setIsDeleting(true);
     setDeleteError(null);
     try {
-      const response = await fetch(`/api/projects`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: projectToDelete }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to delete project');
-      }
-
-      setProjects(projects.filter(project => project.id !== projectToDelete));
+      const success = await deleteProject(projectToDelete);
+      if (!success) throw new Error('Failed to delete project');
       setShowDeleteModal(false);
       setProjectToDelete(null);
       setSuccessMessage('Project deleted successfully');
-      
-      // Scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 3000);
+      setTimeout(() => { setSuccessMessage(null); }, 3000);
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -126,7 +91,7 @@ function AdminContent() {
               <h2 className="text-lg font-semibold text-gray-900">Error loading projects</h2>
               <p className="mt-2 text-sm text-gray-600">{error}</p>
               <button
-                onClick={loadProjects}
+                onClick={fetchProjects}
                 className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Try Again

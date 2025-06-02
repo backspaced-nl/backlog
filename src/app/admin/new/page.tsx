@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { useProjectsApi } from '@/hooks/useProjectsApi';
 
 export default function NewProjectPage() {
+  const { createProject } = useProjectsApi();
   const router = useRouter();
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,20 +21,9 @@ export default function NewProjectPage() {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/admin/new', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create project');
-      }
-
-      const data = await response.json();
-      router.replace(`/admin/edit/${data.id}`);
+      const project = await createProject({ url });
+      if (!project) throw new Error('Failed to create project');
+      router.replace(`/admin/edit/${project.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {

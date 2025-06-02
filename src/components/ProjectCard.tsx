@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PencilIcon, LockClosedIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
-import { Project } from '@/types/project';
+import type { Project } from '@/types/project';
 import { TagDisplay } from './TagDisplay';
 
 interface ProjectCardProps {

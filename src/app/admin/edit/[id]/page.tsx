@@ -5,17 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import Image from 'next/image';
-
-interface Project {
-  id: string;
-  title: string;
-  tags: string[];
-  completionDate: string;
-  partner?: string;
-  url: string;
-  screenshotLocked: boolean;
-  screenshotError?: string;
-}
+import type { Project } from '@/types/project';
 
 export default function EditProjectPage() {
   const router = useRouter();
@@ -32,7 +22,6 @@ export default function EditProjectPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [existingPartners, setExistingPartners] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const suggestionsRef = useRef<HTMLDivElement>(null);
@@ -41,7 +30,6 @@ export default function EditProjectPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageKey, setImageKey] = useState(0);
   const [tagInput, setTagInput] = useState('');
-  const [existingTags, setExistingTags] = useState<string[]>([]);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [isFetchingTitle, setIsFetchingTitle] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -49,6 +37,7 @@ export default function EditProjectPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [screenshotError, setScreenshotError] = useState<string | null>(null);
+  const suggestedPartners: string[] = [];
 
   useEffect(() => {
     const loadProject = async () => {
@@ -56,29 +45,19 @@ export default function EditProjectPage() {
         setIsLoading(true);
         setError(null);
         
-        const response = await fetch('/api/projects');
+        const response = await fetch(`/api/projects/${params.id}`);
         if (!response.ok) {
           throw new Error('Failed to load project');
         }
         
         const data = await response.json();
-        const foundProject = data.projects.find((p: Project) => p.id === params.id);
-        
-        if (!foundProject) {
+        if (!data.project) {
           throw new Error('Project not found');
         }
-        
-        setProject(foundProject);
+        setProject(data.project);
 
-        // Get all existing tags and partners from all projects
-        const allTags = new Set<string>();
-        const allPartners = new Set<string>();
-        data.projects.forEach((p: Project) => {
-          p.tags.forEach(tag => allTags.add(tag));
-          if (p.partner) allPartners.add(p.partner);
-        });
-        setExistingTags(Array.from(allTags));
-        setExistingPartners(Array.from(allPartners));
+        // TODO: Optionally fetch all tags/partners from a dedicated endpoint for suggestions
+        // For now, leave existingTags and existingPartners empty or static
 
         // Check for success message in localStorage
         const successMessage = localStorage.getItem('adminSuccessMessage');
@@ -162,20 +141,20 @@ export default function EditProjectPage() {
     setTagInput(value);
     
     if (value.trim()) {
-      const filtered = existingTags.filter(tag => 
+      const filtered = suggestedTags.filter(tag => 
         tag.toLowerCase().includes(value.toLowerCase()) &&
         !project.tags.includes(tag)
       );
       setSuggestedTags(filtered);
     } else {
       // Show all available tags when input is empty
-      setSuggestedTags(existingTags.filter(tag => !project.tags.includes(tag)));
+      setSuggestedTags(suggestedTags.filter(tag => !project.tags.includes(tag)));
     }
   };
 
   const handleTagFocus = () => {
     // Show all available tags when input is focused
-    setSuggestedTags(existingTags.filter(tag => !project.tags.includes(tag)));
+    setSuggestedTags(suggestedTags.filter(tag => !project.tags.includes(tag)));
   };
 
   const addTag = (tag: string) => {
@@ -207,21 +186,21 @@ export default function EditProjectPage() {
     setProject({ ...project, partner: value });
     
     if (value.length > 0) {
-      const filtered = existingPartners.filter(partner =>
+      const filtered = suggestions.filter(partner =>
         partner.toLowerCase().includes(value.toLowerCase())
       );
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
       // Show all available partners when input is empty
-      setSuggestions(existingPartners);
+      setSuggestions(suggestedPartners);
       setShowSuggestions(true);
     }
   };
 
   const handlePartnerFocus = () => {
     // Show all available partners when input is focused
-    setSuggestions(existingPartners);
+    setSuggestions(suggestedPartners);
     setShowSuggestions(true);
   };
 

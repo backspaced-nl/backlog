@@ -8,9 +8,10 @@ import { SearchInput } from '@/components/SearchInput';
 import { PartnerSelect } from '@/components/PartnerSelect';
 import { TagDisplay } from '@/components/TagDisplay';
 import { ProjectCard } from '@/components/ProjectCard';
+import { useProjectsApi } from '@/hooks/useProjectsApi';
 
 export default function Home() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const { projects, fetchProjects, loading, error } = useProjectsApi();
   const { isAuthenticated } = useAuth();
   
   const {
@@ -26,22 +27,7 @@ export default function Home() {
     getTagCount
   } = useProjectFilters({ projects });
   
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const response = await fetch('/api/projects');
-        if (!response.ok) {
-          throw new Error('Failed to load projects');
-        }
-        const data = await response.json();
-        setProjects(data.projects);
-      } catch (error) {
-        console.error('Error loading projects:', error);
-      }
-    };
-
-    loadProjects();
-  }, []);
+  useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
   return (
     <main className="min-h-screen bg-gray-50">
