@@ -1,154 +1,70 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-
-interface Project {
-  id: string;
-  title: string;
-  url: string;
-  tags: string[];
-  completionDate?: string;
-  partner?: string;
-  screenshotLocked?: boolean;
-  screenshotError?: string;
-}
-
-const projectsFilePath = path.join(process.cwd(), 'src/data/projects.json');
-const screenshotsDir = path.join(process.cwd(), 'public/screenshots');
-
-async function readProjects() {
-  try {
-    const fileContents = await fs.readFile(projectsFilePath, 'utf8');
-    return JSON.parse(fileContents);
-  } catch (error) {
-    console.error('Error reading projects file:', error);
-    return { projects: [] };
-  }
-}
-
-async function writeProjects(projects: Project[]) {
-  try {
-    await fs.writeFile(projectsFilePath, JSON.stringify({ projects }, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing projects file:', error);
-    return false;
-  }
-}
+import { supabase, projectFromDb, projectToDb } from '@/utils/supabase';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function GET() {
-  try {
-    const data = await readProjects();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error in GET /api/projects:', error);
-    return NextResponse.json(
-      { error: 'Failed to load projects' },
-      { status: 500 }
-    );
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  // Map all projects to camelCase
+  const projects = (data || []).map(projectFromDb);
+  return NextResponse.json({ projects });
 }
 
 export async function POST(request: Request) {
-  try {
-    const project = await request.json();
-    const data = await readProjects();
-    
-    // Add new project
-    data.projects.push(project);
-    const success = await writeProjects(data.projects);
-    
-    if (!success) {
-      throw new Error('Failed to write projects file');
-    }
-    
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error adding project:', error);
-    return NextResponse.json(
-      { error: 'Failed to add project' },
-      { status: 500 }
-    );
+  const body = await request.json();
+  const newProject = {
+    id: uuidv4(),
+    title: body.title || '',
+    url: body.url,
+    completionDate: body.completionDate || '',
+    tags: body.tags || [],
+    partner: body.partner || '',
+    screenshotLocked: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const { error } = await supabase.from('projects').insert([projectToDb(newProject)]);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  return NextResponse.json(newProject, { status: 201 });
 }
 
 export async function PUT(request: Request) {
-  try {
-    const { id, ...projectData } = await request.json();
-    const data = await readProjects();
-    
-    // Update project
-    const index = data.projects.findIndex((p: Project) => p.id === id);
-    if (index === -1) {
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      );
-    }
-    
-    data.projects[index] = { ...data.projects[index], ...projectData };
-    const success = await writeProjects(data.projects);
-    
-    if (!success) {
-      throw new Error('Failed to write projects file');
-    }
-    
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error updating project:', error);
-    return NextResponse.json(
-      { error: 'Failed to update project' },
-      { status: 500 }
-    );
+  const body = await request.json();
+  const { id, ...updateData } = body;
+
+  // Compose update object in camelCase, then map
+  const mappedData = projectToDb({
+    id,
+    ...updateData,
+    updatedAt: new Date().toISOString(),
+  });
+
+  const { error } = await supabase
+    .from('projects')
+    .update(mappedData)
+    .eq('id', id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  return NextResponse.json({ success: true });
 }
 
 export async function DELETE(request: Request) {
-  try {
-    const { id } = await request.json();
+  const { id } = await request.json();
+  const { error } = await supabase.from('projects').delete().eq('id', id);
 
-    if (!id) {
-      return NextResponse.json(
-        { error: "Project ID is required" },
-        { status: 400 }
-      );
-    }
-
-    const data = await readProjects();
-    
-    // Find the project to delete
-    const projectIndex = data.projects.findIndex((p: Project) => p.id === id);
-    if (projectIndex === -1) {
-      return NextResponse.json(
-        { error: "Project not found" },
-        { status: 404 }
-      );
-    }
-
-    // Remove the project from the array
-    data.projects.splice(projectIndex, 1);
-
-    // Write back to file
-    const success = await writeProjects(data.projects);
-    if (!success) {
-      throw new Error('Failed to write projects file');
-    }
-
-    // Try to delete the screenshot file if it exists
-    try {
-      const screenshotPath = path.join(screenshotsDir, `${id}.jpg`);
-      await fs.unlink(screenshotPath);
-    } catch {
-      // Ignore error if file doesn't exist
-      console.log('Screenshot file not found or already deleted');
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting project:", error);
-    return NextResponse.json(
-      { error: "Failed to delete project" },
-      { status: 500 }
-    );
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  return NextResponse.json({ success: true });
 } 

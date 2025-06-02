@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-import fs from "fs/promises";
-import path from "path";
 import { withPage } from "@/utils/puppeteer";
 import { generateScreenshot } from "@/utils/screenshot";
-
-const projectsFilePath = path.join(process.cwd(), "src/data/projects.json");
+import { supabase, projectToDb, projectFromDb } from '@/utils/supabase';
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +18,7 @@ export async function POST(request: Request) {
 
     const projectId = uuidv4();
 
-    // Create new project object with default values
+    // Create new project object with default values (camelCase)
     const newProject = {
       id: projectId,
       title: '',  // Will be filled in later
@@ -31,6 +28,7 @@ export async function POST(request: Request) {
       partner: '',
       screenshotLocked: false, // Start unlocked
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     // First get the website title
@@ -53,55 +51,33 @@ export async function POST(request: Request) {
         }
         return page.title();
       });
-
       newProject.title = title;
-
-      // Now try to generate screenshot using the shared function
-      try {
-        await generateScreenshot({ id: projectId, url: data.url });
-        newProject.screenshotLocked = true;
-      } catch (screenshotError) {
-        console.error('Error generating screenshot:', screenshotError);
-        newProject.screenshotLocked = false;
-        // Return error response but still create the project
-        return NextResponse.json(
-          { 
-            ...newProject,
-            error: screenshotError instanceof Error ? screenshotError.message : 'Failed to generate screenshot'
-          },
-          { status: 201 }
-        );
-      }
     } catch (error) {
       console.error('Error accessing website:', error);
+      newProject.title = '';
+    }
+
+    // Screenshot logic (local, as requested)
+    try {
+      await generateScreenshot({ id: projectId, url: data.url });
+      newProject.screenshotLocked = true;
+    } catch (screenshotError) {
+      console.error('Error generating screenshot:', screenshotError);
       newProject.screenshotLocked = false;
-      // Return error response but still create the project
+    }
+
+    // Insert new project into Supabase
+    const { data: inserted, error } = await supabase.from('projects').insert([projectToDb(newProject)]).select('*').single();
+    if (error) {
+      console.error('Error writing project to Supabase:', error);
       return NextResponse.json(
-        { 
-          ...newProject,
-          error: error instanceof Error ? error.message : 'Failed to access website'
-        },
-        { status: 201 }
+        { error: 'Failed to write project to Supabase' },
+        { status: 500 }
       );
     }
 
-    // Read existing projects
-    let projects = [];
-    try {
-      const projectsData = await fs.readFile(projectsFilePath, 'utf-8');
-      const data = JSON.parse(projectsData);
-      projects = data.projects || [];
-    } catch (error) {
-      console.error('Error reading projects file:', error);
-    }
-
-    // Add new project
-    projects.unshift(newProject);
-
-    // Write updated projects back to file
-    await fs.writeFile(projectsFilePath, JSON.stringify({ projects }, null, 2));
-
-    return NextResponse.json(newProject, { status: 201 });
+    // Return camelCase project
+    return NextResponse.json(projectFromDb(inserted), { status: 201 });
   } catch (error) {
     console.error('Error creating project:', error);
     return NextResponse.json(
