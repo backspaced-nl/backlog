@@ -21,8 +21,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ title });
-  } catch (error) {
-    console.error('Error fetching title:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch title' },
       { status: 500 }

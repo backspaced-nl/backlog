@@ -230,12 +230,11 @@ export default function EditProjectPage() {
         throw new Error(data.error || 'Failed to generate screenshot');
       }
 
-      // Wait a moment to ensure the file is written
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Show success message and force image reload
+      // Update URL and remount image so it shows without page refresh (cache-bust so no stale 404)
+      const screenshotUrl = `/screenshots/${project.id}.jpg?t=${Date.now()}`;
+      setProject((prev) => ({ ...prev, screenshotUrl }));
+      setImageKey((prev) => prev + 1);
       setMessage('Screenshot generated successfully!');
-      setImageKey(prev => prev + 1); // Force image component to remount
       setScreenshotError(null);
     } catch (err) {
       setScreenshotError(err instanceof Error ? err.message : 'An error occurred');
@@ -274,9 +273,9 @@ export default function EditProjectPage() {
         throw new Error('Failed to upload screenshot');
       }
 
+      setProject((prev) => ({ ...prev, screenshotUrl: `/screenshots/${prev.id}.jpg?t=${Date.now()}` }));
+      setImageKey((prev) => prev + 1);
       setMessage('Screenshot uploaded successfully!');
-      // Force a refresh of the image by incrementing the version
-      setImageKey(prev => prev + 1);
       window.scrollTo(0, 0);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'An error occurred');
@@ -406,8 +405,8 @@ export default function EditProjectPage() {
                           
                           const data = await response.json();
                           setProject(prev => ({ ...prev, title: data.title }));
-                        } catch (err) {
-                          console.error('Failed to fetch title:', err);
+                        } catch {
+                          // ignore
                         } finally {
                           setIsFetchingTitle(false);
                         }
@@ -598,23 +597,21 @@ export default function EditProjectPage() {
               </div>
 
               <div className="relative aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden">
-                <Image
-                  key={imageKey}
-                  src={project.screenshotUrl || ''}
-                  alt={`${project.title} screenshot`}
-                  fill
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent) {
-                      parent.style.backgroundColor = '#f3f4f6';
-                    }
-                  }}
-                  priority
-                  unoptimized
-                />
+                {project.screenshotUrl ? (
+                  <Image
+                    key={imageKey}
+                    src={project.screenshotUrl}
+                    alt={`${project.title} screenshot`}
+                    fill
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                    priority
+                    unoptimized
+                  />
+                ) : null}
               </div>
 
               {screenshotError && (

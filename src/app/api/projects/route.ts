@@ -1,23 +1,24 @@
 import { NextResponse } from 'next/server';
-import { supabase, projectFromDb, projectToDb } from '@/utils/supabase';
-import { v4 as uuidv4 } from 'uuid';
+import { getProjects, createProject, updateProject, deleteProject, projectFromDb, projectToDb } from '@/utils/db';
+import { deleteScreenshot, screenshotExists } from '@/utils/storage';
 import { getScreenshotUrl } from '@/utils/screenshot';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function GET() {
-  const { data, error } = await supabase
-    .from('projects')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const rows = await getProjects();
+    const projects = await Promise.all(
+      rows.map(async (p) => {
+        const project = projectFromDb(p);
+        if (!project) return project;
+        const hasScreenshot = await screenshotExists(project.id);
+        return { ...project, ...(hasScreenshot && { screenshotUrl: getScreenshotUrl(project.id) }) };
+      })
+    );
+    return NextResponse.json({ projects });
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
-  // Map all projects to camelCase and add screenshotUrl
-  const projects = (data || []).map((p) => {
-    const project = projectFromDb(p);
-    return project ? { ...project, screenshotUrl: getScreenshotUrl(project.id) } : project;
-  });
-  return NextResponse.json({ projects });
 }
 
 export async function POST(request: Request) {
@@ -53,22 +54,12 @@ export async function POST(request: Request) {
             timeout: 10000
           });
         } catch (gotoError) {
-          // Log detailed error for debugging
-          console.error('Detailed page.goto error:', {
-            url: body.url,
-            error: gotoError,
-            message: gotoError instanceof Error ? gotoError.message : 'Unknown error',
-            stack: gotoError instanceof Error ? gotoError.stack : undefined,
-            name: gotoError instanceof Error ? gotoError.name : 'Unknown error type'
-          });
           throw gotoError;
         }
         return page.title();
       });
       newProject.title = title;
-    } catch (error) {
-      // If title fetch fails, continue with empty title
-      console.error('Error accessing website:', error);
+    } catch {
       newProject.title = '';
     }
     // --- Generate screenshot ---
@@ -76,30 +67,22 @@ export async function POST(request: Request) {
       const { generateScreenshot } = await import('@/utils/screenshot');
       await generateScreenshot({ id: projectId, url: body.url, title: '', tags: [] });
       newProject.screenshotLocked = true;
-    } catch (screenshotError) {
-      // If screenshot fails, continue but mark as not locked
-      console.error('Error generating screenshot:', screenshotError);
+    } catch {
       newProject.screenshotLocked = false;
     }
-    // --- Insert new project into Supabase ---
-    const { data: inserted, error } = await supabase.from('projects').insert([projectToDb(newProject)]).select('*').single();
-    if (error) {
-      // Database error
-      console.error('Error writing project to Supabase:', error);
-      return NextResponse.json(
-        { error: 'Failed to write project to Supabase' },
-        { status: 500 }
-      );
-    }
-    // Return camelCase project with screenshotUrl
+    const dbRow = projectToDb(newProject);
+    if (!dbRow) throw new Error('projectToDb returned null');
+    const inserted = await createProject(dbRow);
+
     const project = projectFromDb(inserted);
+    const hasScreenshot = project ? await screenshotExists(project.id) : false;
     return NextResponse.json(
-      project ? { ...project, screenshotUrl: getScreenshotUrl(project.id) } : project,
+      project
+        ? { ...project, ...(hasScreenshot && { screenshotUrl: getScreenshotUrl(project.id) }) }
+        : project,
       { status: 201 }
     );
   } catch (error) {
-    // Catch-all error
-    console.error('Error creating project:', error);
     return NextResponse.json(
       { error: 'Failed to create project' },
       { status: 500 }
@@ -108,38 +91,33 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const body = await request.json();
-  const { id, ...updateData } = body;
+  try {
+    const body = await request.json();
+    const { id, ...updateData } = body;
 
-  // Compose update object in camelCase, then map
-  const mappedData = projectToDb({
-    id,
-    ...updateData,
-    updatedAt: new Date().toISOString(),
-  });
-
-  const { error } = await supabase
-    .from('projects')
-    .update(mappedData)
-    .eq('id', id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const mapped = projectToDb({
+      id,
+      ...updateData,
+      updatedAt: new Date().toISOString(),
+    });
+    if (mapped) await updateProject(id, mapped);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
-  return NextResponse.json({ success: true });
 }
 
 export async function DELETE(request: Request) {
-  const { id } = await request.json();
-  // Delete screenshot from Supabase Storage
-  const { error: storageError } = await supabase.storage.from('screenshots').remove([`${id}.jpg`]);
-  if (storageError) {
-    // Log but do not block project deletion if screenshot removal fails
-    console.error('Error deleting screenshot from Supabase:', storageError.message);
+  try {
+    const { id } = await request.json();
+    try {
+      await deleteScreenshot(id);
+    } catch {
+      // ignore
+    }
+    await deleteProject(id);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
-  const { error } = await supabase.from('projects').delete().eq('id', id);
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-  return NextResponse.json({ success: true });
 } 

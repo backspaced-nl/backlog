@@ -1,39 +1,47 @@
 import sharp from 'sharp';
 import { withPage } from './puppeteer';
-import { supabase } from './supabase';
+import { saveScreenshot } from './storage';
 import type { Project } from '@/types/project';
-
-const BUCKET = 'screenshots';
 
 export async function generateScreenshot(project: Project) {
   try {
     const screenshotBuffer = await withPage(async (page) => {
-      await page.setViewport({ 
-        width: 1440, 
+      await page.setViewport({
+        width: 1440,
         height: 2000,
-        deviceScaleFactor: 1
-      });
-      
-      // Navigate to the page and wait for network to be idle
-      await page.goto(project.url, { 
-        waitUntil: 'domcontentloaded',
-        timeout: 30000
+        deviceScaleFactor: 1,
       });
 
-      // Elements to hide before taking screenshot
+      await page.goto(project.url, {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
       const elementsToHide = [
         '#cookiescript_injected_wrapper',
         '.cky-consent-container',
-        // Add more selectors here as needed
+        '[id*="cookie"]',
+        '[class*="cookie"]',
+        '[id*="consent"]',
+        '[class*="consent"]',
+        '.cc-window',
+        '#onetrust-banner-sdk',
+        '.gdpr',
       ];
 
-      // Hide specified elements
       await page.evaluate((selectors) => {
-        selectors.forEach(selector => {
-          const elements = document.querySelectorAll(selector);
-          elements.forEach(element => {
-            (element as HTMLElement).style.display = 'none';
-          });
+        selectors.forEach((selector) => {
+          try {
+            document.querySelectorAll(selector).forEach((el) => {
+              const html = el as HTMLElement;
+              html.style.setProperty('display', 'none', 'important');
+              html.remove();
+            });
+          } catch {
+            // selector may be invalid for this page
+          }
         });
       }, elementsToHide);
 
@@ -51,32 +59,20 @@ export async function generateScreenshot(project: Project) {
           x: 0,
           y: 0,
           width: 1440,
-          height: Math.min(fullHeight, 2000)
-        }
+          height: Math.min(fullHeight, 2000),
+        },
       });
     });
 
-    // Process with sharp
-    const processedImage = await sharp(screenshotBuffer)
+    const processedImage = await sharp(screenshotBuffer as Buffer)
       .resize(600, 800, { fit: 'cover', position: 'top' })
       .jpeg({ quality: 80 })
       .toBuffer();
 
-    // Upload to Supabase Storage
-    const { error } = await supabase.storage
-      .from(BUCKET)
-      .upload(`${project.id}.jpg`, processedImage, {
-        contentType: 'image/jpeg',
-        upsert: true,
-      });
-    if (error) throw error;
+    await saveScreenshot(project.id, processedImage);
   } catch (error) {
-    console.error(`Error generating/uploading screenshot for ${project.url}:`, error);
     throw error;
   }
 }
 
-export function getScreenshotUrl(projectId: string) {
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(`${projectId}.jpg`);
-  return data.publicUrl;
-} 
+export { getScreenshotUrl } from './storage';

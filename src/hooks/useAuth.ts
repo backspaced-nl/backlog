@@ -10,8 +10,7 @@ export function useAuth() {
         const response = await fetch('/api/auth/verify');
         const data = await response.json();
         setIsAuthenticated(data.isAuthenticated);
-      } catch (error) {
-        console.error('Error checking auth status:', error);
+      } catch {
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);

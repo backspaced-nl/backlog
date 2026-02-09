@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
-import { supabase } from '@/utils/supabase';
+import { saveScreenshot } from '@/utils/storage';
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +15,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       return NextResponse.json(
         { error: 'File must be an image' },
@@ -23,37 +22,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Process image with sharp
     const processedImage = await sharp(buffer)
       .resize(600, 800, {
         fit: 'cover',
-        position: 'top'
+        position: 'top',
       })
+      .jpeg({ quality: 80 })
       .toBuffer();
 
-    // Upload to Supabase Storage
-    const { error } = await supabase.storage
-      .from('screenshots')
-      .upload(`${projectId}.jpg`, processedImage, {
-        contentType: 'image/jpeg',
-        upsert: true,
-      });
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to upload screenshot to Supabase' },
-        { status: 500 }
-      );
-    }
+    await saveScreenshot(projectId, processedImage);
 
     return NextResponse.json(
       { message: 'Screenshot uploaded successfully' },
       { status: 200 }
     );
-  } catch (error) {
-    console.error('Error uploading screenshot:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to upload screenshot' },
       { status: 500 }

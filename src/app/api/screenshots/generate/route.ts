@@ -18,8 +18,7 @@ export async function POST(request: Request) {
       { message: 'Screenshot generated successfully' },
       { status: 200 }
     );
-  } catch (error) {
-    console.error('Error generating screenshot:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to generate screenshot' },
       { status: 500 }

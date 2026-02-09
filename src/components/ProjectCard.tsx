@@ -40,23 +40,21 @@ export function ProjectCard({
           rel="noopener noreferrer"
           className="block"
         >
-          <div className="relative w-full" style={{ paddingBottom: '133.33%' }}>
-            <Image
-              src={project.screenshotUrl || ``}
-              alt={`${project.title} screenshot`}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                const parent = target.parentElement;
-                if (parent) {
-                  parent.style.backgroundColor = '#f3f4f6';
-                }
-              }}
-              priority
-              unoptimized
-            />
+          <div className="relative w-full bg-gray-100" style={{ paddingBottom: '133.33%' }}>
+            {project.screenshotUrl ? (
+              <Image
+                src={project.screenshotUrl}
+                alt={`${project.title} screenshot`}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+                priority
+                unoptimized
+              />
+            ) : null}
           </div>
           <div className="p-6 flex flex-col h-full">
             <h2 className="text-base font-semibold mb-3 text-gray-900 group-hover:text-indigo-600 transition-colors duration-200">

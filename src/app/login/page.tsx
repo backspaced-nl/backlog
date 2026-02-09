@@ -21,9 +21,7 @@ export default function LoginPage() {
           router.replace('/admin');
         }
       })
-      .catch(error => {
-        console.error('Auth check failed:', error);
-      });
+      .catch(() => {});
   }, [router]);
 
   const handlePinChange = (index: number, value: string) => {

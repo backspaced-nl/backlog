@@ -70,8 +70,7 @@ export async function POST(request: Request) {
       { error: `Invalid PIN. ${remainingAttempts} attempts remaining.` },
       { status: 401 }
     );
-  } catch (error) {
-    console.error('Error verifying PIN:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to verify PIN' },
       { status: 500 }

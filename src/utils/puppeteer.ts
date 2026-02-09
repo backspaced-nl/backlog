@@ -2,6 +2,11 @@ import puppeteer, { Browser, Page } from 'puppeteer-core';
 
 let browserInstance: Browser | null = null;
 
+function isConnectionError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /connection closed|protocol error|session closed|target closed/i.test(msg);
+}
+
 export async function getBrowser(): Promise<Browser> {
   if (!browserInstance) {
     browserInstance = await puppeteer.connect({
@@ -13,18 +18,31 @@ export async function getBrowser(): Promise<Browser> {
 
 export async function closeBrowser(): Promise<void> {
   if (browserInstance) {
-    await browserInstance.close();
+    try {
+      await browserInstance.close();
+    } catch {
+      // ignore close errors
+    }
     browserInstance = null;
   }
 }
 
 export async function withBrowser<T>(callback: (browser: Browser) => Promise<T>): Promise<T> {
-  const browser = await getBrowser();
-  try {
-    return await callback(browser);
-  } catch (error) {
-    throw error;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const browser = await getBrowser();
+      return await callback(browser);
+    } catch (error) {
+      lastError = error;
+      if (isConnectionError(error)) {
+        browserInstance = null;
+        continue;
+      }
+      throw error;
+    }
   }
+  throw lastError;
 }
 
 export async function withPage<T>(callback: (page: Page) => Promise<T>): Promise<T> {
