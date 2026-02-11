@@ -1,7 +1,7 @@
 # Coolify / Nixpacks: https://coolify.io/docs/applications/build-packs/nixpacks
 
 [phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = ["nodejs_20", "yarn"]
 
 [phases.install]
 cmds = ["yarn install --frozen-lockfile"]
