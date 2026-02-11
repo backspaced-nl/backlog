@@ -4,7 +4,7 @@ interface TagDisplayProps {
   isSelected?: boolean;
   onClick?: (tag: string) => void;
   onRemove?: (tag: string) => void;
-  variant?: 'filter' | 'display' | 'pill';
+  variant?: 'filter' | 'pill';
 }
 
 export function TagDisplay({ 
@@ -13,7 +13,7 @@ export function TagDisplay({
   isSelected, 
   onClick, 
   onRemove,
-  variant = 'display' 
+  variant = 'pill' 
 }: TagDisplayProps) {
   const baseStyles = {
     filter: `px-3 py-1 rounded-md text-sm font-medium ${

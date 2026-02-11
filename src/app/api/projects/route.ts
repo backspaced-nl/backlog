@@ -44,21 +44,28 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    // --- Fetch website title ---
+    // --- Fetch website title and detect WooCommerce for E-commerce tag ---
     try {
       const { withPage } = await import('@/utils/puppeteer');
-      const title = await withPage(async (page) => {
+      const { title, isWooCommerce } = await withPage(async (page) => {
         try {
-          await page.goto(body.url, { 
+          await page.goto(body.url, {
             waitUntil: 'domcontentloaded',
             timeout: 10000
           });
         } catch (gotoError) {
           throw gotoError;
         }
-        return page.title();
+        const title = await page.title();
+        const html = await page.content();
+        const isWooCommerce = /woocommerce/i.test(html);
+        return { title, isWooCommerce };
       });
       newProject.title = title;
+      if (isWooCommerce) {
+        const baseTags = body.tags || [];
+        newProject.tags = baseTags.includes('E-commerce') ? baseTags : [...baseTags, 'E-commerce'];
+      }
     } catch {
       newProject.title = '';
     }
@@ -82,7 +89,7 @@ export async function POST(request: Request) {
         : project,
       { status: 201 }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to create project' },
       { status: 500 }

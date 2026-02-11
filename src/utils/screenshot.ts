@@ -29,6 +29,7 @@ export async function generateScreenshot(project: Project) {
         '.cc-window',
         '#onetrust-banner-sdk',
         '.gdpr',
+        '.hystmodal'
       ];
 
       await page.evaluate((selectors) => {

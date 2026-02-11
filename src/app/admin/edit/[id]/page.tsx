@@ -31,6 +31,7 @@ export default function EditProjectPage() {
   const [imageKey, setImageKey] = useState(0);
   const [tagInput, setTagInput] = useState('');
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [allTagsFromDb, setAllTagsFromDb] = useState<string[]>([]);
   const [isFetchingTitle, setIsFetchingTitle] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -56,8 +57,13 @@ export default function EditProjectPage() {
         }
         setProject(data.project);
 
-        // TODO: Optionally fetch all tags/partners from a dedicated endpoint for suggestions
-        // For now, leave existingTags and existingPartners empty or static
+        // Fetch all projects to derive unique tags for suggestions
+        const projectsRes = await fetch('/api/projects');
+        if (projectsRes.ok) {
+          const { projects: allProjects } = await projectsRes.json();
+          const tags = Array.from(new Set((allProjects as Project[]).flatMap((p) => p.tags))).sort();
+          setAllTagsFromDb(tags);
+        }
 
         // Check for success message in localStorage
         const successMessage = localStorage.getItem('adminSuccessMessage');
@@ -139,22 +145,18 @@ export default function EditProjectPage() {
   const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setTagInput(value);
-    
+    const available = allTagsFromDb.filter((tag) => !project.tags.includes(tag));
     if (value.trim()) {
-      const filtered = suggestedTags.filter(tag => 
-        tag.toLowerCase().includes(value.toLowerCase()) &&
-        !project.tags.includes(tag)
+      setSuggestedTags(
+        available.filter((tag) => tag.toLowerCase().includes(value.toLowerCase()))
       );
-      setSuggestedTags(filtered);
     } else {
-      // Show all available tags when input is empty
-      setSuggestedTags(suggestedTags.filter(tag => !project.tags.includes(tag)));
+      setSuggestedTags(available);
     }
   };
 
   const handleTagFocus = () => {
-    // Show all available tags when input is focused
-    setSuggestedTags(suggestedTags.filter(tag => !project.tags.includes(tag)));
+    setSuggestedTags(allTagsFromDb.filter((tag) => !project.tags.includes(tag)));
   };
 
   const addTag = (tag: string) => {

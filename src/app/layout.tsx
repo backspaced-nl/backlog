@@ -8,6 +8,13 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Backlog | Backspaced",
   description: "Backlog is a collection of projects that I've worked on.",
+  icons: {
+    icon: [
+      { url: "/favicon.png", media: "(prefers-color-scheme: light)" },
+      { url: "/favicon-dark.png", media: "(prefers-color-scheme: dark)" },
+    ],
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

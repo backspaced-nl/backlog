@@ -17,6 +17,7 @@ Copy `.env.example` to `.env` and set:
 
 - **DATABASE_URL** – PostgreSQL connection string
 - **ADMIN_PIN** – PIN for `/login` and `/admin`
+- **BLESS_TOKEN** – (optional) [Browserless](https://browserless.io) API token for screenshot generation; omit to skip remote screenshots
 
 ## Database
 
@@ -26,15 +27,48 @@ Use your own PostgreSQL. Run the schema once:
 psql "$DATABASE_URL" -f schema.sql
 ```
 
-## Deploy on Coolify (Nixpacks)
+---
 
-1. In Coolify: **New resource** → **Application** → connect repo.
-2. **Build pack**: choose **Nixpacks** ([docs](https://coolify.io/docs/applications/build-packs/nixpacks)). The repo root has a `nixpacks.toml` with build/start commands.
-3. Add a **PostgreSQL** database in Coolify and link it. Set **DATABASE_URL** in the app’s environment (e.g. from the Postgres service’s connection string).
-4. Run `schema.sql` once against that database (Coolify terminal or external client).
-5. **Screenshots** are stored in `public/screenshots` and served at `/screenshots/{id}.jpg`. To keep them across redeploys, add a **persistent volume** in Coolify for `public/screenshots` (or the app root).
+## Deploy on Coolify
 
-## Learn More
+### 1. Create the application
 
-- [Next.js Documentation](https://nextjs.org/docs)
+- In Coolify: **New resource** → **Application**
+- Connect your Git repository (GitHub/GitLab/etc.)
+- **Build pack**: select **Nixpacks**  
+  The repo includes a `nixpacks.toml` with `yarn install`, `yarn build`, and `yarn start`. No extra config needed.
+
+### 2. Add PostgreSQL
+
+- **New resource** → **Database** → **PostgreSQL**
+- Create the database and note the connection string (or use Coolify’s “Link” if available)
+- In your **Application** → **Environment**, add:
+  - `DATABASE_URL` = your Postgres connection string (e.g. `postgresql://user:password@postgres:5432/dbname` if Postgres is in the same Coolify network)
+  - `ADMIN_PIN` = PIN for `/login` and `/admin`
+  - `BLESS_TOKEN` = (optional) Browserless token for screenshot generation
+
+### 3. Run the database schema
+
+After the first deploy (or before, if you have DB access):
+
+- Use **Coolify** → your app → **Terminal**, or any client connected to the same Postgres
+- Run: `psql "$DATABASE_URL" -f schema.sql`  
+  (from a shell that has `DATABASE_URL` set, or paste the connection string into `psql` and run the contents of `schema.sql`)
+
+### 4. (Optional) Persist screenshots
+
+Screenshots are stored in `public/screenshots` and served at `/screenshots/{id}.jpg`. To keep them across redeploys:
+
+- In your **Application** → **Storages** (or **Volumes**)
+- Add a **persistent storage**: mount path `public/screenshots` (or mount a volume at the app root if your config uses it)
+
+### 5. Deploy
+
+- Trigger a **Deploy** from Coolify. The Nixpacks build will run `yarn install --frozen-lockfile` and `yarn build`; the start command is `yarn start`.
+- Set the **Public URL** (domain or Coolify proxy) in the application settings.
+
+### References
+
+- [Coolify – Applications](https://coolify.io/docs/applications)
 - [Coolify – Nixpacks](https://coolify.io/docs/applications/build-packs/nixpacks)
+- [Next.js Documentation](https://nextjs.org/docs)
