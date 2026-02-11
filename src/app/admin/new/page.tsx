@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useProjectsApi } from '@/hooks/useProjectsApi';
 
 export default function NewProjectPage() {

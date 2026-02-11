@@ -21,8 +21,7 @@ export function ProjectCard({
   project, 
   isAuthenticated = false,
   variant = 'grid',
-  onDelete,
-  index = 0
+  onDelete
 }: ProjectCardProps) {
   const [egg, setEgg] = useState<'red' | 'yellow' | 'green' | null>(null);
 
