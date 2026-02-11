@@ -29,10 +29,10 @@ export default function Home() {
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen">
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Search and filter section */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+        <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated p-6 mb-10">
           <div className="flex flex-col md:flex-row gap-4">
             <SearchInput
               value={searchQuery}
@@ -63,22 +63,22 @@ export default function Home() {
             {(selectedPartner || selectedTag !== 'All') && (
               <div className="flex flex-wrap items-center gap-2 mt-4">
                 {selectedTag !== 'All' && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm bg-indigo-50 text-indigo-700 border border-indigo-100">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius)] text-sm bg-[var(--accent-muted)] text-[var(--accent-foreground)] border border-[var(--border)]">
                     {selectedTag}
                     <button
                       onClick={() => setSelectedTag('All')}
-                      className="ml-1.5 text-indigo-400 hover:text-indigo-600"
+                      className="ml-1.5 text-[var(--accent)]/70 hover:text-[var(--accent)]"
                     >
                       ×
                     </button>
                   </span>
                 )}
                 {selectedPartner && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm bg-indigo-50 text-indigo-700 border border-indigo-100">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius)] text-sm bg-[var(--accent-muted)] text-[var(--accent-foreground)] border border-[var(--border)]">
                     {selectedPartner}
                     <button
                       onClick={() => setSelectedPartner('')}
-                      className="ml-1.5 text-indigo-400 hover:text-indigo-600"
+                      className="ml-1.5 text-[var(--accent)]/70 hover:text-[var(--accent)]"
                     >
                       ×
                     </button>
@@ -90,7 +90,7 @@ export default function Home() {
                       setSelectedTag('All');
                       setSelectedPartner('');
                     }}
-                    className="text-sm text-indigo-600 hover:text-indigo-800"
+                    className="text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium"
                   >
                     Clear all
                   </button>
@@ -101,12 +101,13 @@ export default function Home() {
         </div>
 
         {/* Projects grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-          {filteredProjects.map((project) => (
+        <div className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          {filteredProjects.map((project, i) => (
             <ProjectCard
               key={project.id}
               project={project}
               isAuthenticated={isAuthenticated}
+              index={i}
             />
           ))}
         </div>

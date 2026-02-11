@@ -32,31 +32,27 @@ export default function NewProjectPage() {
   };
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center mb-8">
-          <Link href="/admin" className="text-gray-600 hover:text-gray-900">
-            <ArrowLeftIcon className="h-6 w-6" />
-          </Link>
-          <h1 className="text-2xl font-bold ml-4">New Project</h1>
-        </div>
+    <div className="min-h-screen">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--foreground)] mb-4">New Project</h1>
 
         {message && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-sm text-green-600">{message}</p>
+          <div className="mb-4 p-4 bg-[var(--success-bg)] border border-green-200 rounded-[var(--radius)]">
+            <p className="text-sm text-[var(--success-text)]">{message}</p>
           </div>
         )}
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="mb-4 p-4 bg-[var(--error-bg)] border border-red-200 rounded-[var(--radius)]">
+            <p className="text-sm text-[var(--error-text)]">{error}</p>
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated overflow-hidden">
           <form onSubmit={handleSubmit} className="p-6">
             <div>
-              <label htmlFor="url" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="url" className="block text-sm font-medium text-[var(--foreground)]">
                 Project URL
               </label>
               <div className="mt-1">
@@ -65,12 +61,12 @@ export default function NewProjectPage() {
                   id="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="block w-full px-3 py-2.5 border border-[var(--border)] rounded-[var(--radius)] text-sm bg-[var(--bg-elevated)] text-[var(--foreground)] placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 focus:border-[var(--accent)]"
                   placeholder="https://example.com"
                   required
                 />
               </div>
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-[var(--foreground-muted)]">
                 Enter the URL of your project. We&apos;ll automatically fetch the title and generate a screenshot.
               </p>
             </div>
@@ -78,14 +74,14 @@ export default function NewProjectPage() {
             <div className="mt-6 flex justify-end gap-3">
               <Link
                 href="/admin"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-[var(--radius)] border border-[var(--border-strong)] text-[var(--foreground)] bg-[var(--bg-elevated)] hover:bg-[var(--border)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--border-strong)]"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-[var(--radius)] text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Creating...' : 'Create Project'}
               </button>

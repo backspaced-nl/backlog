@@ -1,9 +1,20 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Albert_Sans, Barlow } from "next/font/google";
 import "./globals.css";
 import Navbar from '../components/Navbar';
 
-const inter = Inter({ subsets: ["latin"] });
+const albertSans = Albert_Sans({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const barlow = Barlow({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
   title: "Backlog | Backspaced",
@@ -23,11 +34,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="light">
+    <html lang="en" className={`light ${albertSans.variable} ${barlow.variable}`}>
       <head>
         <meta name="robots" content="noindex,nofollow" />
       </head>
-      <body className={`${inter.className} bg-gray-50`}>
+      <body className="min-h-screen bg-[var(--bg)]">
         <Navbar />
         {children}
       </body>

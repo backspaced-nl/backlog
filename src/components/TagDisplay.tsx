@@ -16,13 +16,12 @@ export function TagDisplay({
   variant = 'pill' 
 }: TagDisplayProps) {
   const baseStyles = {
-    filter: `px-3 py-1 rounded-md text-sm font-medium ${
+    filter: `px-3 py-1.5 rounded-[var(--radius)] text-sm font-medium transition-colors ${
       isSelected
-        ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-        : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+        ? 'bg-[var(--accent-muted)] text-[var(--accent-foreground)] border border-[var(--border)]'
+        : 'bg-[var(--bg)] text-[var(--foreground-muted)] border border-[var(--border)] hover:bg-[var(--border)] hover:text-[var(--foreground)]'
     }`,
-    display: "px-3 py-1 bg-gray-50 text-indigo-800 rounded-md text-xs border border-indigo-100",
-    pill: "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 whitespace-nowrap"
+    pill: "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--accent-muted)] text-[var(--accent-foreground)] whitespace-nowrap border border-transparent"
   };
 
   if (onClick) {
@@ -43,7 +42,7 @@ export function TagDisplay({
         <button
           type="button"
           onClick={() => onRemove(tag)}
-          className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-indigo-200"
+          className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-[var(--accent)]/10 text-[var(--accent)]"
         >
           ×
         </button>
@@ -56,4 +55,4 @@ export function TagDisplay({
       {tag}
     </span>
   );
-} 
+}
