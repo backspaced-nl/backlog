@@ -17,7 +17,7 @@ export async function GET(
     return new NextResponse(buffer, {
       headers: {
         'Content-Type': 'image/jpeg',
-        'Cache-Control': 'public, max-age=86400',
+        'Cache-Control': 'no-cache, max-age=0, must-revalidate',
       },
     });
   } catch (err) {
