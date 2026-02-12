@@ -19,9 +19,6 @@ scripts
 backup.sql
 *.sql
 
-# Lock files (yarn only in image)
-package-lock.json
-
 # Misc
 .DS_Store
 *.log

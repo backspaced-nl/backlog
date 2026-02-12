@@ -1,15 +1,14 @@
 # Coolify / Nixpacks: https://coolify.io/docs/applications/build-packs/nixpacks
 
 [phases.setup]
-nixPkgs = ["nodejs_20", "yarn"]
-# Override auto-detected Chromium/apt deps; we use Browserless (remote browser), so no local Chromium needed
+nixPkgs = ["nodejs_20"]
 aptPkgs = []
 
 [phases.install]
-cmds = ["yarn install --frozen-lockfile"]
+cmds = ["npm ci"]
 
 [phases.build]
-cmds = ["yarn build"]
+cmds = ["npm run build"]
 
 [start]
-cmd = "yarn start"
+cmd = "npm start"
