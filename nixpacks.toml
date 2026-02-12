@@ -2,6 +2,8 @@
 
 [phases.setup]
 nixPkgs = ["nodejs_20", "yarn"]
+# Override auto-detected Chromium/apt deps; we use Browserless (remote browser), so no local Chromium needed
+aptPkgs = []
 
 [phases.install]
 cmds = ["yarn install --frozen-lockfile"]

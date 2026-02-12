@@ -14,16 +14,19 @@ async function main() {
   }
 
   const rows = await getProjects();
-  const unlocked = rows.filter((r) => r.screenshot_locked !== true);
+  const updateAll = process.env.UPDATE_ALL === '1';
+  const toProcess = updateAll ? rows : rows.filter((r) => r.screenshot_locked !== true);
 
-  if (unlocked.length === 0) {
-    console.log('No unlocked projects. Nothing to do.');
+  if (toProcess.length === 0) {
+    console.log(updateAll ? 'No projects found.' : 'No unlocked projects. Nothing to do.');
     return;
   }
 
-  console.log(`Found ${unlocked.length} unlocked project(s). Generating screenshots…`);
+  console.log(
+    `Found ${toProcess.length} project(s) to process.${updateAll ? ' (--all: updating every project)' : ''}`
+  );
 
-  for (const row of unlocked) {
+  for (const row of toProcess) {
     const project = projectFromDb(row);
     if (!project?.url) {
       console.warn(`Skipping project ${row.id}: no URL`);
