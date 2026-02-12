@@ -1,0 +1,28 @@
+# Git and IDE
+.git
+.cursor
+*.md
+
+# Dependencies and build artifacts (recreated in image)
+node_modules
+.next
+out
+
+# Local and example env (secrets come from Coolify)
+.env
+.env.*
+!.env.example
+
+# Scripts and tooling (not needed at runtime)
+scripts
+.agents
+backup.sql
+*.sql
+
+# Lock files (yarn only in image)
+package-lock.json
+
+# Misc
+.DS_Store
+*.log
+.vercel

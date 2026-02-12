@@ -12,4 +12,4 @@ cmds = ["yarn install --frozen-lockfile"]
 cmds = ["yarn build"]
 
 [start]
-cmd = "yarn start"
+cmd = "node .next/standalone/server.js"
