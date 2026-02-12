@@ -1,8 +1,10 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-// Next.js serves public/ at /. So public/screenshots/x.jpg → /screenshots/x.jpg
-const SCREENSHOTS_DIR = path.resolve(process.cwd(), 'public', 'screenshots');
+// Use SCREENSHOT_STORAGE_PATH for persistent volume (e.g. /storage/screenshots); else public/screenshots
+const SCREENSHOTS_DIR =
+  process.env.SCREENSHOT_STORAGE_PATH ||
+  path.resolve(process.cwd(), 'public', 'screenshots');
 
 function getFilePath(projectId: string): string {
   return path.join(SCREENSHOTS_DIR, `${projectId}.jpg`);

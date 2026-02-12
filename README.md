@@ -57,10 +57,9 @@ After the first deploy (or before, if you have DB access):
 
 ### 4. (Optional) Persist screenshots
 
-Screenshots are stored in `public/screenshots` and served at `/screenshots/{id}.jpg`. To keep them across redeploys:
+Screenshots are stored in `public/screenshots` (or `SCREENSHOT_STORAGE_PATH` if set) and served at `/screenshots/{id}.jpg`. To keep them across redeploys:
 
-- In your **Application** → **Storages** (or **Volumes**)
-- Add a **persistent storage**: mount path `public/screenshots` (or mount a volume at the app root if your config uses it)
+- In your **Application** → **Storages** (or **Volumes**): set **SCREENSHOT_STORAGE_PATH** to a persistent path (e.g. `/storage/screenshots`) and mount that volume, or mount `public/screenshots`
 
 ### 5. Deploy
 
