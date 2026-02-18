@@ -572,7 +572,7 @@ export default function EditProjectPage() {
                     />
                   </button>
                   <span className="text-sm text-[var(--foreground)]">
-                    Verborgen (aparte sectie)
+                    Verborgen
                   </span>
                 </div>
               </div>
