@@ -16,10 +16,10 @@ export function TagDisplay({
   variant = 'pill' 
 }: TagDisplayProps) {
   const baseStyles = {
-    filter: `px-3 py-1.5 rounded-[var(--radius)] text-sm font-medium transition-colors ${
+    filter: `px-4 py-2 rounded-[var(--radius)] text-sm font-medium border transition-colors cursor-pointer ${
       isSelected
-        ? 'bg-[var(--accent-muted)] text-[var(--accent-foreground)] border border-[var(--border)]'
-        : 'bg-[var(--bg)] text-[var(--foreground-muted)] border border-[var(--border)] hover:bg-[var(--border)] hover:text-[var(--foreground)]'
+        ? 'border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--accent-foreground)]'
+        : 'border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--foreground-muted)] hover:border-[var(--border-strong)] hover:text-[var(--foreground)]'
     }`,
     pill: "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--accent-muted)] text-[var(--accent-foreground)] whitespace-nowrap border border-transparent"
   };

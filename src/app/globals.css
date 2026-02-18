@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #F3F0EC;
+  --bg: #F3F4FF;
   --bg-elevated: #ffffff;
   --foreground: #1c1c1a;
-  --foreground-muted: #5c5c58;
+  --foreground-muted: #6b6b8a;
   --border: #e8e6e1;
   --border-strong: #d4d2cc;
-  --accent: #0d5c5c;
-  --accent-hover: #0a4848;
-  --accent-muted: #e8f2f2;
-  --accent-foreground: #0d5c5c;
+  --accent: #0066FF;
+  --accent-hover: #0052CC;
+  --accent-muted: #e8f0ff;
+  --accent-foreground: #0066FF;
   --success-bg: #f0f7f0;
   --success-text: #1a5c1a;
   --error-bg: #fdf2f0;
   --error-text: #b91c1c;
-  --highlight: #E7DFD9;
+  --highlight: #E1E5FE;
   --radius: 0.5rem;
   --radius-lg: 0.75rem;
   --shadow: 0 1px 3px rgba(28, 28, 26, 0.06);
@@ -34,7 +34,7 @@
   --color-foreground: var(--foreground);
   --color-highlight: var(--highlight);
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
@@ -70,7 +70,7 @@ input[type="checkbox"].checkbox-custom:checked {
 }
 input[type="checkbox"].checkbox-custom:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(13, 92, 92, 0.3);
+  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.3);
 }
 
 /* Subtle grain overlay for depth */

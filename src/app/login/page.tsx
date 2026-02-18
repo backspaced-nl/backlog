@@ -83,7 +83,7 @@ export default function LoginPage() {
       if (response.ok) {
         window.location.replace('/admin');
       } else {
-        setError(data.error || 'Invalid PIN');
+        setError(data.error || 'Ongeldige pincode');
         setPin(['', '', '', '', '']);
         inputRefs.current[0]?.focus();
 
@@ -93,7 +93,7 @@ export default function LoginPage() {
         }
       }
     } catch {
-      setError('An error occurred. Please try again.');
+      setError('Er is een fout opgetreden. Probeer opnieuw.');
       setPin(['', '', '', '', '']);
       inputRefs.current[0]?.focus();
     } finally {
@@ -106,10 +106,10 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--foreground)]">
-            Admin Access
+            Beheer
           </h1>
           <p className="mt-2 text-sm text-[var(--foreground-muted)]">
-            Enter PIN to continue
+            Voer je pincode in om door te gaan
           </p>
         </div>
 

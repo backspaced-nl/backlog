@@ -16,9 +16,9 @@ export function PartnerSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="block w-full sm:w-48 px-3 py-2.5 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius)] text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 focus:border-[var(--accent)] appearance-none transition-colors"
+        className="block w-full sm:w-48 px-3 py-2.5 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius)] text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 focus:border-[var(--accent)] appearance-none transition-colors cursor-pointer"
       >
-        <option value="">All Partners</option>
+        <option value="">Alle partners</option>
         {partners.map(partner => (
           <option key={partner} value={partner}>
             {partner}

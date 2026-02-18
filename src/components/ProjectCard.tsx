@@ -136,20 +136,20 @@ export function ProjectCard({
             {project.tags.map((tag) => (
               <span
                 key={tag}
-                className="text-xs font-500 bg-highlight text-ink px-3 py-1 rounded-[var(--radius)] inline-flex items-center gap-1.5"
+                className="text-xs font-500 bg-[var(--highlight)] text-[var(--foreground)] px-3 py-1 rounded-[var(--radius)] inline-flex items-center gap-1.5"
               >
                 <TagIcon className="w-3.5 h-3.5 shrink-0" />
                 {tag}
               </span>
             ))}
             {project.partner && (
-              <span className="text-xs font-500 bg-highlight text-ink px-3 py-1 rounded-[var(--radius)] inline-flex items-center gap-1.5">
+              <span className="text-xs font-500 bg-[var(--highlight)] text-[var(--foreground)] px-3 py-1 rounded-[var(--radius)] inline-flex items-center gap-1.5">
                 <UserIcon className="w-3.5 h-3.5 shrink-0" />
                 {project.partner}
               </span>
             )}
             {project.completionDate && (
-              <span className="text-xs font-500 bg-highlight text-ink px-3 py-1 rounded-[var(--radius)] inline-flex items-center gap-1.5">
+              <span className="text-xs font-500 bg-[var(--highlight)] text-[var(--foreground)] px-3 py-1 rounded-[var(--radius)] inline-flex items-center gap-1.5">
                 <CalendarDaysIcon className="w-3.5 h-3.5 shrink-0" />
                 {new Date(project.completionDate).toLocaleDateString('nl-NL', {
                   year: 'numeric',
@@ -183,7 +183,7 @@ export function ProjectCard({
           {project.screenshotLocked && (
             <span className="inline-flex items-center gap-1 w-fit px-2 py-0.5 text-[11px] font-medium text-[var(--foreground-muted)] bg-[var(--highlight)]/80 rounded-md">
               <LockClosedIcon className="h-3 w-3" />
-              Screenshot locked
+              Screenshot vergrendeld
             </span>
           )}
         </div>
@@ -224,14 +224,14 @@ export function ProjectCard({
             href={`/admin/edit/${project.id}`}
             className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-[var(--radius)] text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]"
           >
-            Edit
+            Bewerken
           </Link>
           {onDelete && (
             <button
               onClick={() => onDelete(project.id)}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-[var(--radius)] text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
             >
-              Delete
+              Verwijderen
             </button>
           )}
         </div>

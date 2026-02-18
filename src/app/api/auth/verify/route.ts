@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     if (attempt && attempt.blockedUntil > Date.now()) {
       return NextResponse.json(
         {
-          error: 'Too many attempts. Please try again later.',
+          error: 'Te veel pogingen. Probeer later opnieuw.',
           blockedUntil: attempt.blockedUntil,
         },
         { status: 429 }
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       pinAttempts.set(ip, currentAttempt);
       return NextResponse.json(
         {
-          error: 'Too many attempts. Please try again later.',
+          error: 'Te veel pogingen. Probeer later opnieuw.',
           blockedUntil: currentAttempt.blockedUntil,
         },
         { status: 429 }
@@ -74,12 +74,12 @@ export async function POST(request: Request) {
     // Return remaining attempts
     const remainingAttempts = MAX_ATTEMPTS - currentAttempt.count;
     return NextResponse.json(
-      { error: `Invalid PIN. ${remainingAttempts} attempts remaining.` },
+      { error: `Ongeldige pincode. Nog ${remainingAttempts} pogingen over.` },
       { status: 401 }
     );
   } catch {
     return NextResponse.json(
-      { error: 'Failed to verify PIN' },
+      { error: 'Pincode verifiëren mislukt' },
       { status: 500 }
     );
   }

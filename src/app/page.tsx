@@ -110,9 +110,15 @@ export default function Home() {
     if (!authLoading && !isAuthenticated && activeTab === 'hidden') setActiveTab('visible');
   }, [authLoading, isAuthenticated, activeTab, setActiveTab]);
 
+  useEffect(() => {
+    if (!loading && activeTab === 'hidden' && filteredWorkProjects.length === 0) setActiveTab('visible');
+  }, [loading, activeTab, filteredWorkProjects.length, setActiveTab]);
+
   const projectsToShow = activeTab === 'visible' ? filteredProjects : filteredWorkProjects;
   const filtersActive = selectedTag !== 'All' || !!selectedPartner || !!searchQuery;
   const canReorder = isAuthenticated && !filtersActive;
+  const hasFilters = allTags.length > 1 || allPartners.length > 0;
+  const hasTabs = isAuthenticated && filteredWorkProjects.length > 0;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -173,7 +179,7 @@ export default function Home() {
           </div>
         )}
         {/* Search, filters and tabs in one block */}
-        <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated overflow-hidden mb-10">
+        <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated overflow-hidden mb-8">
           <div className="p-6">
             <div className="flex flex-col md:flex-row gap-4">
               <SearchInput
@@ -181,20 +187,23 @@ export default function Home() {
                 onChange={setSearchQuery}
                 placeholder="Zoek projecten..."
               />
-              <PartnerSelect
-                value={selectedPartner}
-                onChange={setSelectedPartner}
-                partners={allPartners}
-              />
+              {allPartners.length > 0 && (
+                <PartnerSelect
+                  value={selectedPartner}
+                  onChange={setSelectedPartner}
+                  partners={allPartners}
+                />
+              )}
             </div>
 
+            {hasFilters && (
             <div className="mt-4 min-h-[2.5rem]">
               <div className="flex flex-wrap gap-2">
                 {loading ? (
                   [48, 56, 64, 72, 56].map((w, i) => (
                     <div
                       key={i}
-                      className="h-8 rounded-[var(--radius)] bg-[var(--border)] animate-pulse"
+                      className="h-8 rounded-[var(--radius)] bg-[var(--highlight)] animate-pulse"
                       style={{ width: w }}
                     />
                   ))
@@ -212,51 +221,53 @@ export default function Home() {
                 )}
               </div>
 
-              {(selectedPartner || selectedTag !== 'All') && (
+              {filtersActive && (
                 <div className="flex flex-wrap items-center gap-2 mt-4">
-                  {selectedTag !== 'All' && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius)] text-sm bg-[var(--accent-muted)] text-[var(--accent-foreground)] border border-[var(--border)]">
+                {selectedTag !== 'All' && (
+                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[var(--radius)] text-sm font-medium bg-[var(--accent-muted)] text-[var(--accent-foreground)] border border-[var(--accent)]">
                       {selectedTag}
                       <button
                         onClick={() => setSelectedTag('All')}
-                        className="ml-1.5 text-[var(--accent)]/70 hover:text-[var(--accent)]"
+                        className="text-[var(--accent)]/70 hover:text-[var(--accent)]"
                       >
                         ×
                       </button>
                     </span>
                   )}
-                  {selectedPartner && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius)] text-sm bg-[var(--accent-muted)] text-[var(--accent-foreground)] border border-[var(--border)]">
+                {selectedPartner && (
+                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[var(--radius)] text-sm font-medium bg-[var(--accent-muted)] text-[var(--accent-foreground)] border border-[var(--accent)]">
                       {selectedPartner}
                       <button
                         onClick={() => setSelectedPartner('')}
-                        className="ml-1.5 text-[var(--accent)]/70 hover:text-[var(--accent)]"
+                        className="text-[var(--accent)]/70 hover:text-[var(--accent)]"
                       >
                         ×
                       </button>
                     </span>
                   )}
-                  <button
+                <button
                     onClick={() => {
                       setSelectedTag('All');
                       setSelectedPartner('');
                     }}
-                    className="text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium"
+                    className="px-4 py-2 rounded-[var(--radius)] text-sm font-medium border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--foreground-muted)] hover:border-[var(--border-strong)] hover:text-[var(--foreground)] transition-colors"
                   >
                     Wis filters
                   </button>
                 </div>
               )}
             </div>
+            )}
+
           </div>
 
-          {/* Tabs - only when logged in */}
-          {isAuthenticated && (
+          {/* Tabs - only when logged in and there are hidden projects */}
+          {isAuthenticated && filteredWorkProjects.length > 0 && (
             <div className="flex gap-0 border-t border-[var(--border)] bg-[var(--bg)]/30">
               <button
                 type="button"
                 onClick={() => setActiveTab('visible')}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors cursor-pointer ${
                   activeTab === 'visible'
                     ? 'bg-[var(--bg-elevated)] text-[var(--foreground)] border-b-2 border-[var(--accent)]'
                     : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--bg)]/50'
@@ -269,7 +280,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setActiveTab('hidden')}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors cursor-pointer ${
                   activeTab === 'hidden'
                     ? 'bg-[var(--bg-elevated)] text-[var(--foreground)] border-b-2 border-[var(--accent)]'
                     : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--bg)]/50'
@@ -299,16 +310,16 @@ export default function Home() {
               <div key={i} className="group relative">
                 <div className="relative rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated overflow-hidden bg-[var(--bg-elevated)] mb-5">
                   <div className="bg-[var(--bg-elevated)] px-4 py-2.5 flex items-center gap-2 border-b border-[var(--border)]">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--border)]" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--border)]" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--border)]" />
-                    <div className="ml-2 h-3 bg-[var(--border)] animate-pulse rounded w-24" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--highlight)]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--highlight)]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--highlight)]" />
+                    <div className="ml-2 h-3 bg-[var(--highlight)] animate-pulse rounded w-24" />
                   </div>
-                  <div className="relative aspect-[1440/1920] bg-[var(--border)] animate-pulse" />
+                  <div className="relative aspect-[1440/1920] bg-[var(--highlight)] animate-pulse" />
                 </div>
                 <div className="flex flex-wrap gap-2 min-h-[1.75rem]">
                   {[1, 2, 3].map((j) => (
-                    <div key={j} className="h-6 bg-[var(--border)] animate-pulse rounded-[var(--radius)] w-16" />
+                    <div key={j} className="h-6 bg-[var(--highlight)] animate-pulse rounded-[var(--radius)] w-16" />
                   ))}
                 </div>
               </div>

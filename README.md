@@ -1,6 +1,6 @@
-# Backspaced Backlog
+# Onmates® Projecten
 
-Next.js project backlog: list projects with URLs, tags, partners and screenshots.
+Next.js projecten: lijst met projecten, URLs, tags, partners en screenshots.
 
 ## Getting Started
 

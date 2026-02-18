@@ -17,7 +17,7 @@ export function useProjectsApi() {
       setProjects(data.projects);
       return data.projects as Project[];
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
       return [];
     } finally {
       setLoading(false);
@@ -34,7 +34,7 @@ export function useProjectsApi() {
       const data = await res.json();
       return data.project as Project;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
       return null;
     } finally {
       setLoading(false);
@@ -56,7 +56,7 @@ export function useProjectsApi() {
       setProjects(prev => [data, ...prev]);
       return data as Project;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
       return null;
     } finally {
       setLoading(false);
@@ -78,7 +78,7 @@ export function useProjectsApi() {
       setProjects(prev => prev.map(p => p.id === projectData.id ? { ...p, ...projectData } as Project : p));
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
       return false;
     } finally {
       setLoading(false);
@@ -101,7 +101,7 @@ export function useProjectsApi() {
       });
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
       return false;
     }
   }, []);
@@ -121,7 +121,7 @@ export function useProjectsApi() {
       setProjects(prev => prev.filter(p => p.id !== id));
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
       return false;
     } finally {
       setLoading(false);
@@ -145,7 +145,7 @@ export function useProjectsApi() {
       setProjects(prev => prev.filter(p => !idSet.has(p.id)));
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
       return false;
     } finally {
       setLoading(false);

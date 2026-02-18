@@ -79,7 +79,7 @@ export default function EditProjectPage() {
           }, 3000);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
       } finally {
         setIsLoading(false);
       }
@@ -134,7 +134,7 @@ export default function EditProjectPage() {
       // Redirect to admin page
       router.replace('/admin');
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'An error occurred');
+      setMessage(err instanceof Error ? err.message : 'Er is een fout opgetreden');
     } finally {
       setIsSaving(false);
     }
@@ -237,10 +237,10 @@ export default function EditProjectPage() {
       const screenshotUrl = `/screenshots/${project.id}.jpg?t=${Date.now()}`;
       setProject((prev) => ({ ...prev, screenshotUrl }));
       setImageKey((prev) => prev + 1);
-      setMessage('Screenshot generated successfully!');
+      setMessage('Screenshot succesvol gegenereerd!');
       setScreenshotError(null);
     } catch (err) {
-      setScreenshotError(err instanceof Error ? err.message : 'An error occurred');
+      setScreenshotError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
     } finally {
       setIsGeneratingScreenshot(false);
     }
@@ -252,7 +252,7 @@ export default function EditProjectPage() {
 
     // Check file size (1MB = 1048576 bytes)
     if (file.size > 1048576) {
-      setUploadError('File size must be less than 1MB');
+      setUploadError('Bestandsgrootte moet minder dan 1MB zijn');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -278,10 +278,10 @@ export default function EditProjectPage() {
 
       setProject((prev) => ({ ...prev, screenshotUrl: `/screenshots/${prev.id}.jpg?t=${Date.now()}` }));
       setImageKey((prev) => prev + 1);
-      setMessage('Screenshot uploaded successfully!');
+      setMessage('Screenshot succesvol geüpload!');
       window.scrollTo(0, 0);
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'An error occurred');
+      setUploadError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -339,14 +339,14 @@ export default function EditProjectPage() {
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated p-6">
             <div className="text-center">
-              <h2 className="text-lg font-semibold text-[var(--foreground)]">Error loading project</h2>
+              <h2 className="text-lg font-semibold text-[var(--foreground)]">Fout bij laden project</h2>
               <p className="mt-2 text-sm text-[var(--foreground-muted)]">{error}</p>
               <Link
                 href="/admin"
-                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]"
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-[var(--radius)] text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]"
               >
                 <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Back to Projects
+                Terug naar projecten
               </Link>
             </div>
           </div>
@@ -359,21 +359,21 @@ export default function EditProjectPage() {
     <div className="min-h-screen">
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--foreground)] mb-4">Edit Project</h1>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--foreground)] mb-4">Project bewerken</h1>
 
         {message && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-sm text-green-600">{message}</p>
+          <div className="mb-4 p-4 bg-[var(--success-bg)] border border-green-200 rounded-[var(--radius-lg)]">
+            <p className="text-sm text-[var(--success-text)]">{message}</p>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <form onSubmit={handleSubmit} className="space-y-6 col-span-2">
-            <div className="bg-[var(--bg-elevated)] rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated overflow-hidden">
               <div className="p-6 space-y-6">
                 <div>
                   <label htmlFor="title" className="block text-sm font-medium text-[var(--foreground)]">
-                    Title
+                    Titel
                   </label>
                   <div className="mt-1 flex gap-2">
                     <input
@@ -382,7 +382,7 @@ export default function EditProjectPage() {
                       name="title"
                       value={project.title}
                       onChange={handleChange}
-                      className="block w-full px-3 py-2 border border-[var(--border)] rounded-lg text-sm placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                      className="block w-full px-3 py-2 border border-[var(--border)] rounded-[var(--radius)] text-sm placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                       required
                     />
                     <button
@@ -411,8 +411,8 @@ export default function EditProjectPage() {
                         }
                       }}
                       disabled={isFetchingTitle}
-                      className="inline-flex items-center px-3 py-2 border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] bg-[var(--bg-elevated)] hover:bg-[var(--bg)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Fetch title from website"
+                      className="inline-flex items-center px-3 py-2 border border-[var(--border)] rounded-[var(--radius)] text-sm text-[var(--foreground)] bg-[var(--bg-elevated)] hover:bg-[var(--bg)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Titel van website ophalen"
                     >
                       {isFetchingTitle ? (
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-[var(--border-strong)] border-t-[var(--accent)]"></div>
@@ -427,7 +427,7 @@ export default function EditProjectPage() {
 
                 <div className="relative">
                   <label htmlFor="partner" className="block text-sm font-medium text-[var(--foreground)]">
-                    Partner (optional)
+                    Partner (optioneel)
                   </label>
                   <input
                     type="text"
@@ -436,20 +436,20 @@ export default function EditProjectPage() {
                     value={project.partner || ''}
                     onChange={(e) => handlePartnerChange(e.target.value)}
                     onFocus={handlePartnerFocus}
-                    className="mt-1 block w-full px-3 py-2 border border-[var(--border)] rounded-lg text-sm placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
-                    placeholder="Enter partner name (optional)"
+                    className="mt-1 block w-full px-3 py-2 border border-[var(--border)] rounded-[var(--radius)] text-sm placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                    placeholder="Voer partnernaam in (optioneel)"
                   />
                   {showSuggestions && suggestions.length > 0 && (
                     <div
                       ref={suggestionsRef}
-                      className="absolute z-10 mt-1 w-full bg-[var(--bg-elevated)] shadow-lg rounded-lg border border-[var(--border)] overflow-hidden"
+                      className="absolute z-10 mt-1 w-full bg-[var(--bg-elevated)] shadow-lg rounded-[var(--radius)] border border-[var(--border)] overflow-hidden"
                     >
                       {suggestions.map((partner) => (
                         <button
                           key={partner}
                           type="button"
                           onClick={() => handleSuggestionClick(partner)}
-                          className="w-full text-left px-4 py-2 text-sm text-[var(--foreground)] hover:bg-[var(--border)]"
+                          className="w-full text-left px-4 py-2 text-sm text-[var(--foreground)] hover:bg-[var(--border)] cursor-pointer"
                         >
                           {partner}
                         </button>
@@ -468,14 +468,14 @@ export default function EditProjectPage() {
                     name="url"
                     value={project.url}
                     onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-[var(--border)] rounded-lg text-sm placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                    className="mt-1 block w-full px-3 py-2 border border-[var(--border)] rounded-[var(--radius)] text-sm placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     required
                   />
                 </div>
 
                 <div>
                   <label htmlFor="completionDate" className="block text-sm font-medium text-[var(--foreground)]">
-                    Completion Date (optional)
+                    Afrondingsdatum (optioneel)
                   </label>
                   <input
                     type="date"
@@ -483,7 +483,7 @@ export default function EditProjectPage() {
                     name="completionDate"
                     value={project.completionDate}
                     onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-[var(--border)] rounded-lg text-sm placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                    className="mt-1 block w-full px-3 py-2 border border-[var(--border)] rounded-[var(--radius)] text-sm placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   />
                 </div>
 
@@ -517,17 +517,17 @@ export default function EditProjectPage() {
                         onChange={handleTagInputChange}
                         onFocus={handleTagFocus}
                         onKeyDown={handleTagKeyDown}
-                        placeholder="Add tags..."
-                        className="block w-full px-3 py-2 border border-[var(--border)] rounded-lg text-sm placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                        placeholder="Tags toevoegen..."
+                        className="block w-full px-3 py-2 border border-[var(--border)] rounded-[var(--radius)] text-sm placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                       />
                       {suggestedTags.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-[var(--bg-elevated)] shadow-lg rounded-lg border border-[var(--border)] overflow-hidden">
+                        <div className="absolute z-10 mt-1 w-full bg-[var(--bg-elevated)] shadow-elevated rounded-[var(--radius)] border border-[var(--border)] overflow-hidden">
                           {suggestedTags.map(tag => (
                             <button
                               key={tag}
                               type="button"
                               onClick={() => addTag(tag)}
-                              className="w-full text-left px-4 py-2 text-sm text-[var(--foreground)] hover:bg-[var(--border)]"
+                              className="w-full text-left px-4 py-2 text-sm text-[var(--foreground)] hover:bg-[var(--border)] cursor-pointer"
                             >
                               {tag}
                             </button>
@@ -553,7 +553,7 @@ export default function EditProjectPage() {
                     />
                   </button>
                   <span className="text-sm text-[var(--foreground)]">
-                    Lock Screenshot
+                    Screenshot vergrendelen
                   </span>
                 </div>
 
@@ -585,23 +585,23 @@ export default function EditProjectPage() {
                       setShowDeleteModal(true);
                       setDeleteError(null);
                     }}
-                    className="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-lg text-red-700 bg-[var(--bg-elevated)] hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    className="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-[var(--radius)] text-red-700 bg-[var(--bg-elevated)] hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
-                    Delete Project
+                    Project verwijderen
                   </button>
                   <div className="flex gap-3">
                     <Link
                       href="/admin"
-                      className="inline-flex items-center px-4 py-2 border border-[var(--border-strong)] text-sm font-medium rounded-lg text-[var(--foreground)] bg-[var(--bg-elevated)] hover:bg-[var(--bg)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]"
+                      className="inline-flex items-center px-4 py-2 border border-[var(--border-strong)] text-sm font-medium rounded-[var(--radius)] text-[var(--foreground)] bg-[var(--bg-elevated)] hover:bg-[var(--bg)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]"
                     >
-                      Cancel
+                      Annuleren
                     </Link>
                     <button
                       type="submit"
                       disabled={isSaving}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-[var(--radius)] text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isSaving ? 'Saving...' : 'Save Changes'}
+                      {isSaving ? 'Opslaan...' : 'Opslaan'}
                     </button>
                   </div>
                 </div>
@@ -610,12 +610,12 @@ export default function EditProjectPage() {
           </form>
 
           <div className="col-span-1  space-y-6">
-            <div className="bg-[var(--bg-elevated)] rounded-lg shadow-sm p-6">
+            <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-[var(--foreground)]">Screenshot</h3>
               </div>
 
-              <div className="relative aspect-[4/3] bg-[var(--border)] rounded-lg overflow-hidden">
+              <div className="relative aspect-[4/3] bg-[var(--border)] rounded-[var(--radius-lg)] overflow-hidden">
                 {project.screenshotUrl ? (
                   <Image
                     key={imageKey}
@@ -634,25 +634,25 @@ export default function EditProjectPage() {
               </div>
 
               {screenshotError && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-600">
-                    Screenshot generation failed: {screenshotError}
+                <div className="mt-4 p-3 bg-[var(--error-bg)] border border-red-200 rounded-[var(--radius)]">
+                  <p className="text-sm text-[var(--error-text)]">
+                    Screenshot genereren mislukt: {screenshotError}
                   </p>
                 </div>
               )}
 
               {!project.screenshotLocked && (
                 <div className="mt-4 space-y-3">
-                  <div className="bg-[var(--bg)] rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-[var(--foreground)] mb-2">Generate screenshot</h4>
+                  <div className="bg-[var(--bg)] rounded-[var(--radius-lg)] p-4">
+                    <h4 className="text-sm font-medium text-[var(--foreground)] mb-2">Screenshot genereren</h4>
                     <p className="text-sm text-[var(--foreground-muted)] mb-3">
-                      Let our system capture a screenshot of your project&apos;s URL automatically
+                      Laat ons systeem automatisch een screenshot maken van de URL van je project
                     </p>
                     <button
                       type="button"
                       onClick={generateScreenshot}
                       disabled={isGeneratingScreenshot}
-                      className="w-full inline-flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full inline-flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent shadow-sm text-sm font-medium rounded-[var(--radius)] text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isGeneratingScreenshot ? (
                         <>
@@ -663,7 +663,7 @@ export default function EditProjectPage() {
                           <span>Generating...</span>
                         </>
                       ) : (
-                        'Generate screenshot'
+                        'Screenshot genereren'
                       )}
                     </button>
                   </div>
@@ -677,30 +677,30 @@ export default function EditProjectPage() {
                     </div>
                   </div>
 
-                  <div className="bg-[var(--bg)] rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-[var(--foreground)] mb-2">Upload your own screenshot</h4>
+                  <div className="bg-[var(--bg)] rounded-[var(--radius-lg)] p-4">
+                    <h4 className="text-sm font-medium text-[var(--foreground)] mb-2">Eigen screenshot uploaden</h4>
                     <p className="text-sm text-[var(--foreground-muted)] mb-3">
-                      Recommended dimensions: 1440x2000 pixels
+                      Aanbevolen afmetingen: 1440x2000 pixels
                     </p>
                     {uploadError && (
-                      <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-xs text-red-600">{uploadError}</p>
+                      <div className="mb-3 p-2 bg-[var(--error-bg)] border border-red-200 rounded-[var(--radius)]">
+                        <p className="text-xs text-[var(--error-text)]">{uploadError}</p>
                       </div>
                     )}
                     <div className="flex items-center justify-center w-full">
                       <label
                         htmlFor="screenshot-upload"
-                        className="w-full flex flex-col items-center justify-center px-4 py-3 border-2 border-[var(--border-strong)] border-dashed rounded-lg cursor-pointer bg-[var(--bg-elevated)] hover:bg-[var(--accent-muted)]/50 transition-colors"
+                        className="w-full flex flex-col items-center justify-center px-4 py-3 border-2 border-[var(--border-strong)] border-dashed rounded-[var(--radius-lg)] cursor-pointer bg-[var(--bg-elevated)] hover:bg-[var(--accent-muted)]/50 transition-colors"
                       >
                         <div className="flex flex-col items-center justify-center">
                           <svg className="w-10 h-10 mb-3 text-[var(--accent)]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
                             <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
                           </svg>
                           <p className="mb-1 text-sm text-[var(--foreground)]">
-                            <span className="font-semibold">Click to upload</span> or drag and drop
+                            <span className="font-semibold">Klik om te uploaden</span> of sleep bestanden hierheen
                           </p>
-                          <p className="text-xs text-[var(--foreground-muted)]">Accepted formats: PNG, JPG, JPEG</p>
-                          <p className="text-xs text-[var(--foreground-muted)]">Maximum size: 1MB</p>
+                          <p className="text-xs text-[var(--foreground-muted)]">Geaccepteerde formaten: PNG, JPG, JPEG</p>
+                          <p className="text-xs text-[var(--foreground-muted)]">Maximale grootte: 1MB</p>
                         </div>
                         <input
                           id="screenshot-upload"
@@ -724,10 +724,10 @@ export default function EditProjectPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-[var(--bg)]0/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[var(--bg-elevated)]/95 backdrop-blur-sm rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-[var(--foreground)]/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated-hover max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-[var(--foreground)]">Delete Project</h3>
+              <h3 className="text-lg font-medium text-[var(--foreground)]">Project verwijderen</h3>
               <button
                 type="button"
                 onClick={() => {
@@ -743,12 +743,12 @@ export default function EditProjectPage() {
             </div>
             
             {deleteError ? (
-              <div className="mb-4 p-3 bg-red-50/90 backdrop-blur-sm border border-red-200 rounded-lg">
+              <div className="mb-4 p-3 bg-[var(--error-bg)] border border-red-200 rounded-[var(--radius)]">
                 <p className="text-sm text-red-600">{deleteError}</p>
               </div>
             ) : (
               <p className="text-sm text-[var(--foreground-muted)] mb-6">
-                Are you sure you want to delete this project? This action cannot be undone.
+                Weet je zeker dat je dit project wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.
               </p>
             )}
 
@@ -759,15 +759,15 @@ export default function EditProjectPage() {
                   setShowDeleteModal(false);
                   setDeleteError(null);
                 }}
-                className="px-4 py-2 text-sm font-medium text-[var(--foreground)] bg-[var(--bg-elevated)]/90 backdrop-blur-sm border border-[var(--border-strong)] rounded-lg hover:bg-[var(--bg)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]"
+                className="px-4 py-2 text-sm font-medium text-[var(--foreground)] bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] hover:bg-[var(--border)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--border-strong)]"
               >
-                Cancel
+                Annuleren
               </button>
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600/90 backdrop-blur-sm border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-[var(--radius)] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isDeleting ? (
                   <div className="flex items-center gap-2">
@@ -775,10 +775,10 @@ export default function EditProjectPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span>Deleting...</span>
+                    <span>Verwijderen...</span>
                   </div>
                 ) : (
-                  'Delete'
+                  'Verwijderen'
                 )}
               </button>
             </div>

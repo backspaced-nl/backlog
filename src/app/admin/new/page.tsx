@@ -67,7 +67,7 @@ export default function NewProjectPage() {
       if (!project) throw new Error('Failed to create project');
       router.replace(`/admin/edit/${project.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
       setIsLoading(false);
     }
   };
@@ -118,7 +118,7 @@ export default function NewProjectPage() {
     <div className="min-h-screen">
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--foreground)] mb-4">New Project</h1>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--foreground)] mb-4">Nieuw project</h1>
 
         {message && (
           <div className="mb-4 p-4 bg-[var(--success-bg)] border border-green-200 rounded-[var(--radius)]">
@@ -180,14 +180,14 @@ export default function NewProjectPage() {
             )}
           </AnimatePresence>
           <form onSubmit={mode === 'single' ? handleSubmit : handleBulkSubmit} className="p-6">
-            <div className="flex gap-2 mb-4">
+            <div className="inline-flex rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-elevated)] p-0.5 mb-6">
               <button
                 type="button"
                 onClick={() => setMode('single')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-[var(--radius)] transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-[calc(var(--radius)-2px)] transition-colors ${
                   mode === 'single'
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'bg-[var(--border)] text-[var(--foreground)] hover:bg-[var(--border-strong)]'
+                    ? 'bg-[var(--accent-muted)] text-[var(--accent-foreground)]'
+                    : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
                 }`}
               >
                 Enkele URL
@@ -195,10 +195,10 @@ export default function NewProjectPage() {
               <button
                 type="button"
                 onClick={() => setMode('bulk')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-[var(--radius)] transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-[calc(var(--radius)-2px)] transition-colors ${
                   mode === 'bulk'
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'bg-[var(--border)] text-[var(--foreground)] hover:bg-[var(--border-strong)]'
+                    ? 'bg-[var(--accent-muted)] text-[var(--accent-foreground)]'
+                    : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
                 }`}
               >
                 Meerdere URLs
@@ -208,7 +208,7 @@ export default function NewProjectPage() {
             {mode === 'single' ? (
               <div>
                 <label htmlFor="url" className="block text-sm font-medium text-[var(--foreground)]">
-                  Project URL
+                  Project-URL
                 </label>
                 <div className="mt-1">
                   <input
@@ -222,13 +222,13 @@ export default function NewProjectPage() {
                   />
                 </div>
                 <p className="mt-2 text-sm text-[var(--foreground-muted)]">
-                  Enter the URL of your project. We&apos;ll automatically fetch the title and generate a screenshot.
+                  Voer de URL van je project in. We halen automatisch de titel op en maken een screenshot.
                 </p>
               </div>
             ) : (
               <div>
                 <label htmlFor="bulk-urls" className="block text-sm font-medium text-[var(--foreground)]">
-                  URLs (één per regel)
+                  URL&apos;s (één per regel)
                 </label>
                 <div className="mt-1">
                   <textarea
@@ -241,7 +241,7 @@ export default function NewProjectPage() {
                   />
                 </div>
                 <p className="mt-2 text-sm text-[var(--foreground-muted)]">
-                  Plak meerdere URLs, één per regel. Alleen regels die beginnen met http:// of https:// worden verwerkt.
+                  Plak meerdere URL&apos;s, één per regel. Alleen regels die beginnen met http:// of https:// worden verwerkt.
                 </p>
               </div>
             )}
@@ -270,7 +270,7 @@ export default function NewProjectPage() {
                 href="/admin"
                 className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-[var(--radius)] border border-[var(--border-strong)] text-[var(--foreground)] bg-[var(--bg-elevated)] hover:bg-[var(--border)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--border-strong)]"
               >
-                Cancel
+                Annuleren
               </Link>
               <button
                 type="submit"
@@ -280,10 +280,10 @@ export default function NewProjectPage() {
                 {isLoading
                   ? mode === 'bulk'
                     ? 'Toevoegen...'
-                    : 'Creating...'
+                    : 'Aanmaken...'
                   : mode === 'bulk'
                     ? 'Projecten toevoegen'
-                    : 'Create Project'}
+                    : 'Project aanmaken'}
               </button>
             </div>
           </form>
