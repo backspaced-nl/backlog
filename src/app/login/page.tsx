@@ -1,14 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [pin, setPin] = useState(['', '', '', '', '']);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
-  const router = useRouter();
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -16,11 +14,11 @@ export default function LoginPage() {
       .then(res => res.json())
       .then(data => {
         if (data.isAuthenticated) {
-          router.replace('/admin');
+          window.location.replace('/admin');
         }
       })
       .catch(() => {});
-  }, [router]);
+  }, []);
 
   const handlePinChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
@@ -60,7 +58,7 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        router.replace('/admin');
+        window.location.replace('/admin');
       } else {
         setError(data.error || 'Invalid PIN');
         setPin(['', '', '', '', '']);
