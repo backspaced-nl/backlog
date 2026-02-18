@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getProjects, createProject, updateProject, deleteProject, projectFromDb, projectToDb } from '@/utils/db';
 import { deleteScreenshot, screenshotExists } from '@/utils/storage';
 import { getScreenshotUrl } from '@/utils/screenshot';
 import { v4 as uuidv4 } from 'uuid';
+
+async function requireAuth() {
+  const isAuthenticated = (await cookies()).get('admin_auth')?.value === 'true';
+  if (!isAuthenticated) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  return null;
+}
 
 export async function GET() {
   try {
@@ -22,6 +31,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     // Validate required fields
@@ -99,6 +111,9 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     const { id, ...updateData } = body;
@@ -116,6 +131,9 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     const { id } = await request.json();
     try {

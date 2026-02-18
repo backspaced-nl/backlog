@@ -1,6 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { SearchInput } from '@/components/SearchInput';
@@ -8,14 +26,66 @@ import { PartnerSelect } from '@/components/PartnerSelect';
 import { TagDisplay } from '@/components/TagDisplay';
 import { ProjectCard } from '@/components/ProjectCard';
 import { useProjectsApi } from '@/hooks/useProjectsApi';
-import { LockClosedIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
+import { Bars3Icon, ExclamationCircleIcon, LockClosedIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
+import type { Project } from '@/types/project';
 
 type FrontendTab = 'visible' | 'hidden';
 
+function SortableProjectCard({
+  project,
+  isAuthenticated,
+  index,
+}: {
+  project: Project;
+  isAuthenticated: boolean;
+  index: number;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: project.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const dragHandle = (
+    <div
+      className="cursor-grab active:cursor-grabbing pl-1 text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+      {...attributes}
+      {...listeners}
+    >
+      <Bars3Icon className="h-4 w-4" aria-hidden />
+    </div>
+  );
+
+  return (
+    <div ref={setNodeRef} style={style} className={isDragging ? 'opacity-50 z-10' : ''}>
+      <ProjectCard
+        project={project}
+        isAuthenticated={isAuthenticated}
+        index={index}
+        dragHandle={dragHandle}
+      />
+    </div>
+  );
+}
+
 export default function Home() {
-  const { projects, fetchProjects, loading } = useProjectsApi();
-  const { isAuthenticated } = useAuth();
-  const [activeTab, setActiveTab] = useState<FrontendTab>('visible');
+  const { projects, fetchProjects, reorderProjects, setProjects, loading, error } = useProjectsApi();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+  const activeTab: FrontendTab = pathname === '/verborgen' ? 'hidden' : 'visible';
+
+  const setActiveTab = useCallback((tab: FrontendTab) => {
+    router.push(tab === 'hidden' ? '/verborgen' : '/');
+  }, [router]);
   
   const {
     filteredProjects,
@@ -37,14 +107,71 @@ export default function Home() {
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
   useEffect(() => {
-    if (!isAuthenticated && activeTab === 'hidden') setActiveTab('visible');
-  }, [isAuthenticated, activeTab]);
+    if (!authLoading && !isAuthenticated && activeTab === 'hidden') setActiveTab('visible');
+  }, [authLoading, isAuthenticated, activeTab, setActiveTab]);
 
   const projectsToShow = activeTab === 'visible' ? filteredProjects : filteredWorkProjects;
+  const filtersActive = selectedTag !== 'All' || !!selectedPartner || !!searchQuery;
+  const canReorder = isAuthenticated && !filtersActive;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const [justDragged, setJustDragged] = useState(false);
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
+      setJustDragged(true);
+      if (!over || active.id === over.id) return;
+
+      const oldList = projectsToShow.map(p => p.id);
+      const oldIndex = oldList.indexOf(active.id as string);
+      const newIndex = oldList.indexOf(over.id as string);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const reorderedList = arrayMove(oldList, oldIndex, newIndex);
+      const visibleIds = projects.filter(p => !p.isPrivate).map(p => p.id);
+      const hiddenIds = projects.filter(p => p.isPrivate).map(p => p.id);
+      const newOrder = activeTab === 'visible'
+        ? [...reorderedList, ...hiddenIds]
+        : [...visibleIds, ...reorderedList];
+
+      const previousProjects = [...projects];
+      setProjects(
+        newOrder
+          .map(id => projects.find(p => p.id === id))
+          .filter((p): p is Project => p != null)
+      );
+
+      const success = await reorderProjects(newOrder);
+      if (!success) {
+        setProjects(previousProjects);
+      }
+    },
+    [projects, projectsToShow, activeTab, reorderProjects, setProjects]
+  );
 
   return (
     <main className="min-h-screen">
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {error && (
+          <div className="mb-6 rounded-[var(--radius-lg)] p-4 bg-[var(--error-bg)] border border-red-200 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 text-[var(--error-text)]">
+              <ExclamationCircleIcon className="h-5 w-5 shrink-0" />
+              <span>{error}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => fetchProjects()}
+              className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-[var(--radius)] bg-red-600 text-white hover:bg-red-700"
+            >
+              Opnieuw proberen
+            </button>
+          </div>
+        )}
         {/* Search, filters and tabs in one block */}
         <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated overflow-hidden mb-10">
           <div className="p-6">
@@ -157,7 +284,16 @@ export default function Home() {
         </div>
 
         {/* Projects grid - min-height prevents collapse when switching loading→content */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-h-[480px]">
+        <div
+          className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-h-[480px]"
+          onClickCapture={(e) => {
+            if (justDragged) {
+              e.preventDefault();
+              e.stopPropagation();
+              setJustDragged(false);
+            }
+          }}
+        >
           {loading ? (
             Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="group relative">
@@ -177,6 +313,26 @@ export default function Home() {
                 </div>
               </div>
             ))
+          ) : canReorder ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={projectsToShow.map(p => p.id)}
+                strategy={rectSortingStrategy}
+              >
+                {projectsToShow.map((project, i) => (
+                  <SortableProjectCard
+                    key={project.id}
+                    project={project}
+                    isAuthenticated={isAuthenticated}
+                    index={i}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           ) : (
             projectsToShow.map((project, i) => (
               <ProjectCard

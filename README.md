@@ -21,11 +21,15 @@ Copy `.env.example` to `.env` and set:
 
 ## Database
 
-Use your own PostgreSQL. Run the schema once:
+Use your own PostgreSQL.
+
+**New installs:** Run the base schema once, then migrations run automatically on each deploy:
 
 ```bash
 psql "$DATABASE_URL" -f schema.sql
 ```
+
+**Existing installs:** Migrations run automatically when the app starts (see Dockerfile). The `scripts/migrate.js` script applies any new migrations from `migrations/` that haven't been applied yet.
 
 ---
 
@@ -48,11 +52,12 @@ psql "$DATABASE_URL" -f schema.sql
 
 ### 3. Run the database schema
 
-After the first deploy (or before, if you have DB access):
+**New database:** After creating Postgres, run the base schema once:
 
 - Use **Coolify** → your app → **Terminal**, or any client connected to the same Postgres
-- Run: `psql "$DATABASE_URL" -f schema.sql`  
-  (from a shell that has `DATABASE_URL` set, or paste the connection string into `psql` and run the contents of `schema.sql`)
+- Run: `psql "$DATABASE_URL" -f schema.sql`
+
+**Migrations** run automatically on each deploy (the Dockerfile runs `migrate.js` before starting the app).
 
 ### 4. (Optional) Persist screenshots
 

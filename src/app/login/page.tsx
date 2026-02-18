@@ -6,8 +6,31 @@ export default function LoginPage() {
   const [pin, setPin] = useState(['', '', '', '', '']);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockedUntil, setBlockedUntil] = useState<number | null>(null);
+  const [secondsRemaining, setSecondsRemaining] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const isBlocked = secondsRemaining > 0;
+
+  useEffect(() => {
+    if (!blockedUntil) {
+      setSecondsRemaining(0);
+      return;
+    }
+    const update = () => {
+      const remaining = Math.ceil((blockedUntil - Date.now()) / 1000);
+      if (remaining <= 0) {
+        setBlockedUntil(null);
+        setError(null);
+        setSecondsRemaining(0);
+      } else {
+        setSecondsRemaining(remaining);
+      }
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [blockedUntil]);
 
   useEffect(() => {
     fetch('/api/auth/verify')
@@ -64,8 +87,9 @@ export default function LoginPage() {
         setPin(['', '', '', '', '']);
         inputRefs.current[0]?.focus();
 
-        if (response.status === 429) {
-          setIsBlocked(true);
+        if (response.status === 429 && typeof data.blockedUntil === 'number') {
+          setBlockedUntil(data.blockedUntil);
+          setSecondsRemaining(Math.ceil((data.blockedUntil - Date.now()) / 1000));
         }
       }
     } catch {
@@ -113,7 +137,14 @@ export default function LoginPage() {
         <div className="mt-6 min-h-[2.5rem] flex flex-col items-center justify-center">
           {error && (
             <div className="w-full rounded-[var(--radius)] p-4 bg-[var(--error-bg)] border border-red-200">
-              <p className="text-sm text-[var(--error-text)]">{error}</p>
+              <p className="text-sm text-[var(--error-text)]">
+                {error}
+                {isBlocked && secondsRemaining > 0 && (
+                  <span className="block mt-1 font-medium">
+                    Probeer opnieuw over {secondsRemaining} seconde{secondsRemaining !== 1 ? 'n' : ''}.
+                  </span>
+                )}
+              </p>
             </div>
           )}
           {isLoading && (

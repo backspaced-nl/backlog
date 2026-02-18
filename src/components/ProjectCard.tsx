@@ -17,6 +17,8 @@ interface ProjectCardProps {
   index?: number;
   /** Optional leading cell for list variant (e.g. drag handle) */
   leadingCell?: React.ReactNode;
+  /** Optional drag handle for grid variant (sortable) */
+  dragHandle?: React.ReactNode;
   /** Optional ref, style, className for list variant tr (sortable) */
   trRef?: React.Ref<HTMLTableRowElement>;
   trStyle?: React.CSSProperties;
@@ -28,7 +30,9 @@ export function ProjectCard({
   isAuthenticated = false,
   variant = 'grid',
   onDelete,
+  index,
   leadingCell,
+  dragHandle,
   trRef,
   trStyle,
   trClassName
@@ -58,61 +62,73 @@ export function ProjectCard({
         transition={{ duration: 0.2 }}
         className={`group relative ${egg === 'red' ? 'hidden' : ''}`}
       >
+        <div className="relative rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated overflow-hidden bg-[var(--bg-elevated)] mb-5">
+          <a
+            href={project.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block"
+          >
+            {/* Fake browser chrome */}
+            <div className="bg-[var(--bg-elevated)] px-4 py-2.5 flex items-center gap-2 border-b border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEgg((c) => (c === 'red' ? null : 'red')); }}
+                  className="w-2.5 h-2.5 rounded-full bg-[#ff5f57] hover:ring-2 hover:ring-[#ff5f57]/50 transition-transform hover:scale-110"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEgg((c) => (c === 'yellow' ? null : 'yellow')); }}
+                  className="w-2.5 h-2.5 rounded-full bg-[#febc2e] hover:ring-2 hover:ring-[#febc2e]/50 transition-transform hover:scale-110"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); fireConfetti(e); }}
+                  className="w-2.5 h-2.5 rounded-full bg-[#28c840] hover:ring-2 hover:ring-[#28c840]/50 transition-transform hover:scale-110"
+                  aria-label="Confetti"
+                />
+                <span className="ml-2 text-[11px] text-black/40 font-[family-name:var(--font-sans)] truncate flex-1 min-w-0">
+                  {domain}
+                </span>
+                {dragHandle && (
+                  <div className="ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {dragHandle}
+                  </div>
+                )}
+              </div>
+            {/* Image with aspect ratio */}
+            <div className="relative aspect-[1440/1920] bg-[var(--border)] overflow-hidden">
+              {project.screenshotUrl ? (
+                <Image
+                  src={project.screenshotUrl}
+                  alt={`${project.title} screenshot`}
+                  fill
+                  className={`object-cover transition-transform duration-300 ${egg === 'yellow' ? 'scale-y-[-1]' : ''}`}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                  priority={index !== undefined && index < 6}
+                  unoptimized
+                />
+              ) : null}
+            </div>
+          </a>
+          {isAuthenticated && (
+            <Link
+              href={`/admin/edit/${project.id}`}
+              className="absolute bottom-3 right-3 z-20 p-2 bg-[var(--bg-elevated)] rounded-[var(--radius)] border border-[var(--border)] shadow-elevated opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            >
+              <PencilIcon className="h-4 w-4 text-[var(--foreground-muted)] hover:text-[var(--accent)]" />
+            </Link>
+          )}
+        </div>
         <a
           href={project.url}
           target="_blank"
           rel="noopener noreferrer"
           className="block"
         >
-          <div className="relative rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated overflow-hidden bg-[var(--bg-elevated)] mb-5">
-            {/* Fake browser chrome */}
-            <div className="bg-[var(--bg-elevated)] px-4 py-2.5 flex items-center gap-2 border-b border-[var(--border)]">
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEgg((c) => (c === 'red' ? null : 'red')); }}
-                className="w-2.5 h-2.5 rounded-full bg-[#ff5f57] hover:ring-2 hover:ring-[#ff5f57]/50 transition-transform hover:scale-110"
-              />
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEgg((c) => (c === 'yellow' ? null : 'yellow')); }}
-                className="w-2.5 h-2.5 rounded-full bg-[#febc2e] hover:ring-2 hover:ring-[#febc2e]/50 transition-transform hover:scale-110"
-              />
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); fireConfetti(e); }}
-                className="w-2.5 h-2.5 rounded-full bg-[#28c840] hover:ring-2 hover:ring-[#28c840]/50 transition-transform hover:scale-110"
-                aria-label="Confetti"
-              />
-              <span className="ml-2 text-[11px] text-black/40 font-[family-name:var(--font-sans)] truncate">
-                {domain}
-              </span>
-            </div>
-            {/* Image with aspect ratio */}
-            <div className="relative aspect-[1440/1920] bg-[var(--border)] overflow-hidden">
-                {isAuthenticated && (
-                  <Link
-                    href={`/admin/edit/${project.id}`}
-                    className="absolute bottom-3 right-3 z-20 p-2 bg-[var(--bg-elevated)] rounded-[var(--radius)] border border-[var(--border)] shadow-elevated opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  >
-                    <PencilIcon className="h-4 w-4 text-[var(--foreground-muted)] hover:text-[var(--accent)]" />
-                  </Link>
-                )}
-                {project.screenshotUrl ? (
-                  <Image
-                    src={project.screenshotUrl}
-                    alt={`${project.title} screenshot`}
-                    fill
-                    className={`object-cover transition-transform duration-300 ${egg === 'yellow' ? 'scale-y-[-1]' : ''}`}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                    }}
-                    priority
-                    unoptimized
-                  />
-                ) : null}
-            </div>
-          </div>
           <div className="flex flex-wrap gap-2 min-h-[1.75rem]">
             {project.tags.map((tag) => (
               <span

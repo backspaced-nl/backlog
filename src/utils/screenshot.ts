@@ -4,8 +4,7 @@ import { saveScreenshot } from './storage';
 import type { Project } from '@/types/project';
 
 export async function generateScreenshot(project: Project) {
-  try {
-    const screenshotBuffer = await withPage(async (page) => {
+  const screenshotBuffer = await withPage(async (page) => {
       await page.setViewport({
         width: 1440,
         height: 2000,
@@ -108,10 +107,7 @@ export async function generateScreenshot(project: Project) {
       .jpeg({ quality: 80 })
       .toBuffer();
 
-    await saveScreenshot(project.id, processedImage);
-  } catch (error) {
-    throw error;
-  }
+  await saveScreenshot(project.id, processedImage);
 }
 
 export { getScreenshotUrl } from './storage';

@@ -1,8 +1,9 @@
 import { Pool } from 'pg';
 import type { Project } from '@/types/project';
+import { env } from './env';
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: env.DATABASE_URL,
 });
 
 // DB type (snake_case)

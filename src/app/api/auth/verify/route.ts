@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { env } from '@/utils/env';
 
-const ADMIN_PIN = process.env.ADMIN_PIN || '12345'; // Default PIN for development
+const ADMIN_PIN = env.ADMIN_PIN;
 const COOKIE_NAME = 'admin_auth';
 const COOKIE_MAX_AGE = 60 * 60 * 24; // 24 hours
 const MAX_ATTEMPTS = 5;
@@ -27,7 +28,10 @@ export async function POST(request: Request) {
     const attempt = pinAttempts.get(ip);
     if (attempt && attempt.blockedUntil > Date.now()) {
       return NextResponse.json(
-        { error: 'Too many attempts. Please try again later.' },
+        {
+          error: 'Too many attempts. Please try again later.',
+          blockedUntil: attempt.blockedUntil,
+        },
         { status: 429 }
       );
     }
@@ -56,7 +60,10 @@ export async function POST(request: Request) {
       currentAttempt.blockedUntil = Date.now() + (BLOCK_DURATION * 1000);
       pinAttempts.set(ip, currentAttempt);
       return NextResponse.json(
-        { error: 'Too many attempts. Please try again later.' },
+        {
+          error: 'Too many attempts. Please try again later.',
+          blockedUntil: currentAttempt.blockedUntil,
+        },
         { status: 429 }
       );
     }
