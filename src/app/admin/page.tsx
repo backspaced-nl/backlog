@@ -1,16 +1,79 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Bars3Icon } from '@heroicons/react/24/outline';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { SearchInput } from '@/components/SearchInput';
 import { PartnerSelect } from '@/components/PartnerSelect';
 import { TagDisplay } from '@/components/TagDisplay';
 import { ProjectCard } from '@/components/ProjectCard';
 import { useProjectsApi } from '@/hooks/useProjectsApi';
+import type { Project } from '@/types/project';
+
+function SortableProjectRow({
+  project,
+  onDelete,
+}: {
+  project: Project;
+  onDelete: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: project.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const dragHandle = (
+    <div
+      className="cursor-grab active:cursor-grabbing px-2 py-1 text-[var(--foreground-muted)] hover:text-[var(--foreground)] inline-flex"
+      {...attributes}
+      {...listeners}
+    >
+      <Bars3Icon className="h-5 w-5" aria-hidden />
+    </div>
+  );
+
+  return (
+    <ProjectCard
+      project={project}
+      variant="list"
+      onDelete={onDelete}
+      leadingCell={dragHandle}
+      trRef={setNodeRef}
+      trStyle={style}
+      trClassName={`hover:bg-[var(--bg)]/60 transition-colors ${isDragging ? 'opacity-50 bg-[var(--bg)]' : ''}`}
+    />
+  );
+}
 
 function AdminContent() {
-  const { projects, fetchProjects, deleteProject, error } = useProjectsApi();
+  const { projects, fetchProjects, deleteProject, reorderProjects, setProjects, error } = useProjectsApi();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -62,6 +125,41 @@ function AdminContent() {
     setShowDeleteModal(true);
     setDeleteError(null);
   };
+
+  const filtersActive = selectedTag !== 'All' || !!selectedPartner || !!searchQuery;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldOrder = projects.map(p => p.id);
+      const oldIndex = oldOrder.indexOf(active.id as string);
+      const newIndex = oldOrder.indexOf(over.id as string);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const newOrder = arrayMove(oldOrder, oldIndex, newIndex);
+      const previousProjects = [...projects];
+      setProjects(
+        newOrder
+          .map(id => projects.find(p => p.id === id))
+          .filter((p): p is Project => p != null)
+      );
+
+      const success = await reorderProjects(newOrder);
+      if (!success) {
+        setProjects(previousProjects);
+        setSuccessMessage('Failed to save order. Please try again.');
+        setTimeout(() => setSuccessMessage(null), 3000);
+      }
+    },
+    [projects, reorderProjects, setProjects]
+  );
 
   const confirmDelete = async () => {
     if (!projectToDelete) return;
@@ -180,43 +278,71 @@ function AdminContent() {
           )}
         </div>
 
+        {filtersActive && (
+          <p className="mb-4 text-sm text-[var(--foreground-muted)]">
+            Clear filters to reorder projects.
+          </p>
+        )}
+
         <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-[var(--border)]">
-              <thead className="bg-[var(--bg)]">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
-                    Title
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
-                    URL
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
-                    Tags
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
-                    Partner
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
-                    Completion Date
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-[var(--bg-elevated)] divide-y divide-[var(--border)]">
-                {filteredProjects.map((project) => (
-                  <ProjectCard
-                    key={project.id}
-                    project={project}
-                    variant="list"
-                    onDelete={handleDelete}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={projects.map(p => p.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-[var(--border)]">
+                  <thead className="bg-[var(--bg)]">
+                    <tr>
+                      {!filtersActive && (
+                        <th scope="col" className="w-10 px-2 py-3" aria-label="Reorder" />
+                      )}
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
+                        Title
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
+                        URL
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
+                        Tags
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
+                        Partner
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
+                        Completion Date
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-[var(--bg-elevated)] divide-y divide-[var(--border)]">
+                    {filtersActive
+                      ? filteredProjects.map((project) => (
+                          <ProjectCard
+                            key={project.id}
+                            project={project}
+                            variant="list"
+                            onDelete={handleDelete}
+                          />
+                        ))
+                      : projects.map((project) => (
+                          <SortableProjectRow
+                            key={project.id}
+                            project={project}
+                            onDelete={handleDelete}
+                          />
+                        ))}
+                  </tbody>
+                </table>
+              </div>
+            </SortableContext>
+          </DndContext>
         </div>
       </div>
 

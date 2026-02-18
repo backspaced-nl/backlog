@@ -17,6 +17,7 @@ export type ProjectDb = {
   screenshot_error?: string | null;
   created_at?: string;
   updated_at?: string;
+  position?: number;
 };
 
 export function projectFromDb(
@@ -34,6 +35,7 @@ export function projectFromDb(
     screenshotError: db.screenshot_error,
     createdAt: db.created_at,
     updatedAt: db.updated_at,
+    position: db.position,
   };
 }
 
@@ -52,12 +54,13 @@ export function projectToDb(
     screenshot_error: project.screenshotError,
     created_at: project.createdAt,
     updated_at: project.updatedAt,
+    position: project.position,
   };
 }
 
 export async function getProjects() {
   const { rows } = await pool.query<ProjectDb>(
-    `SELECT * FROM projects ORDER BY created_at DESC`
+    `SELECT * FROM projects ORDER BY position ASC NULLS LAST, created_at DESC`
   );
   return rows;
 }
@@ -72,8 +75,8 @@ export async function getProjectById(id: string) {
 
 export async function createProject(row: ProjectDb) {
   const { rows } = await pool.query<ProjectDb>(
-    `INSERT INTO projects (id, title, url, tags, partner, completion_date, screenshot_locked, screenshot_error, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `INSERT INTO projects (id, title, url, tags, partner, completion_date, screenshot_locked, screenshot_error, created_at, updated_at, position)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, COALESCE((SELECT MAX(position) FROM projects), 0) + 1)
      RETURNING *`,
     [
       row.id,
@@ -95,7 +98,7 @@ export async function updateProject(id: string, data: Partial<ProjectDb>) {
   const fields: string[] = [];
   const values: unknown[] = [];
   let i = 1;
-  const allowed = ['title', 'url', 'tags', 'partner', 'completion_date', 'screenshot_locked', 'screenshot_error', 'updated_at'];
+  const allowed = ['title', 'url', 'tags', 'partner', 'completion_date', 'screenshot_locked', 'screenshot_error', 'updated_at', 'position'];
   for (const [k, v] of Object.entries(data)) {
     if (allowed.includes(k) && v !== undefined) {
       fields.push(`${k} = $${i++}`);
@@ -112,4 +115,17 @@ export async function updateProject(id: string, data: Partial<ProjectDb>) {
 
 export async function deleteProject(id: string) {
   await pool.query(`DELETE FROM projects WHERE id = $1`, [id]);
+}
+
+export async function reorderProjects(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  await pool.query(
+    `UPDATE projects AS p SET position = sub.pos
+     FROM (
+       SELECT id, row_number() OVER () - 1 AS pos
+       FROM unnest($1::uuid[]) AS id
+     ) AS sub
+     WHERE p.id = sub.id`,
+    [ids]
+  );
 }

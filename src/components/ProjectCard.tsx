@@ -15,13 +15,23 @@ interface ProjectCardProps {
   variant?: 'grid' | 'list';
   onDelete?: (id: string) => void;
   index?: number;
+  /** Optional leading cell for list variant (e.g. drag handle) */
+  leadingCell?: React.ReactNode;
+  /** Optional ref, style, className for list variant tr (sortable) */
+  trRef?: React.Ref<HTMLTableRowElement>;
+  trStyle?: React.CSSProperties;
+  trClassName?: string;
 }
 
 export function ProjectCard({ 
   project, 
   isAuthenticated = false,
   variant = 'grid',
-  onDelete
+  onDelete,
+  leadingCell,
+  trRef,
+  trStyle,
+  trClassName
 }: ProjectCardProps) {
   const [egg, setEgg] = useState<'red' | 'yellow' | 'green' | null>(null);
 
@@ -136,7 +146,12 @@ export function ProjectCard({
   }
 
   return (
-    <tr className="hover:bg-[var(--bg)]/60 transition-colors">
+    <tr
+      ref={trRef}
+      style={trStyle}
+      className={trClassName ?? 'hover:bg-[var(--bg)]/60 transition-colors'}
+    >
+      {leadingCell != null ? <td className="w-10">{leadingCell}</td> : null}
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="text-sm font-medium text-[var(--foreground)]">{project.title}</div>
         {project.screenshotLocked && (

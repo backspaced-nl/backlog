@@ -85,6 +85,27 @@ export function useProjectsApi() {
     }
   }, []);
 
+  // Reorder projects
+  const reorderProjects = useCallback(async (ids: string[]): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/projects/reorder', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) throw new Error('Failed to reorder projects');
+      await res.json();
+      setProjects(prev => {
+        const byId = new Map(prev.map(p => [p.id, p]));
+        return ids.map(id => byId.get(id)).filter((p): p is Project => p != null);
+      });
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      return false;
+    }
+  }, []);
+
   // Delete project
   const deleteProject = useCallback(async (id: string) => {
     setLoading(true);
@@ -116,6 +137,7 @@ export function useProjectsApi() {
     createProject,
     updateProject,
     deleteProject,
+    reorderProjects,
     setProjects, // for manual updates if needed
   };
 } 

@@ -10,4 +10,5 @@ export interface Project {
   updatedAt?: string;
   createdAt?: string;
   screenshotUrl?: string;
+  position?: number;
 } 
