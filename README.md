@@ -35,8 +35,7 @@ psql "$DATABASE_URL" -f schema.sql
 
 - In Coolify: **New resource** → **Application**
 - Connect your Git repository (GitHub/GitLab/etc.)
-- **Build pack**: select **Nixpacks**  
-  The repo includes a `nixpacks.toml` with `yarn install`, `yarn build`, and `yarn start`. No extra config needed.
+- **Build pack**: select **Dockerfile**
 
 ### 2. Add PostgreSQL
 
@@ -63,11 +62,11 @@ Screenshots are stored in `public/screenshots` (or `SCREENSHOT_STORAGE_PATH` if 
 
 ### 5. Deploy
 
-- Trigger a **Deploy** from Coolify. The Nixpacks build will run `yarn install --frozen-lockfile` and `yarn build`; the start command is `yarn start`.
+- Trigger a **Deploy** from Coolify. The Dockerfile build will run `npm ci`, `npm run build`, and `npm start`.
 - Set the **Public URL** (domain or Coolify proxy) in the application settings.
 
 ### References
 
 - [Coolify – Applications](https://coolify.io/docs/applications)
-- [Coolify – Nixpacks](https://coolify.io/docs/applications/build-packs/nixpacks)
+- [Coolify – Dockerfile](https://coolify.io/docs/applications/build-packs/dockerfile)
 - [Next.js Documentation](https://nextjs.org/docs)

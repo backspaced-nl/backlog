@@ -1,4 +1,4 @@
-# Two-stage build to avoid Nix/long nixpacks builds that can timeout on Coolify
+# Two-stage build for Coolify deployment
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
