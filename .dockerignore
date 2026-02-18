@@ -13,11 +13,10 @@ out
 .env.*
 !.env.example
 
-# Scripts and tooling (not needed at runtime)
-scripts
+# Scripts used at runtime for migrations (scripts/ and migrations/ are included)
 .agents
 backup.sql
-*.sql
+schema.sql
 
 # Misc
 .DS_Store
