@@ -262,7 +262,7 @@ export default function Home() {
           </div>
 
           {/* Tabs - only when logged in and there are hidden projects */}
-          {isAuthenticated && filteredWorkProjects.length > 0 && (
+          {hasTabs && (
             <div className="flex gap-0 border-t border-[var(--border)] bg-[var(--bg)]/30">
               <button
                 type="button"
