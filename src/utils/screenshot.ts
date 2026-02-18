@@ -20,16 +20,54 @@ export async function generateScreenshot(project: Project) {
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
       const elementsToHide = [
-        '#cookiescript_injected_wrapper',
+        // Cookiebot
+        '#CybotCookiebotDialog',
+        '#CybotCookiebotDialogBodyUnderlay',
+        // OneTrust
+        '#onetrust-banner-sdk',
+        '#onetrust-consent-sdk',
+        '#ot-sdk-cookie-policy',
+        // CookieYes
         '.cky-consent-container',
+        '#cky-consent-banner',
+        // Osano
+        '.osano-cm-dialog',
+        '.osano-cm-window',
+        // Cookie Consent (Insites)
+        '.cc-window',
+        '.cc_banner',
+        '#cookie-law-info-bar',
+        // CookieScript
+        '#cookiescript_injected_wrapper',
+        // Quantcast
+        '.qc-cmp2-container',
+        '#quantcast',
+        // Didomi
+        '#didomi-host',
+        '.didomi-popup',
+        // Usercentrics
+        '#usercentrics-consent-banner',
+        '.uc-banner',
+        // Iubenda
+        '.iubenda-cs-consent',
+        '#iubenda-cs-banner',
+        // Termly
+        '#termly-code-snippet-support',
+        '.termly',
+        // TrustArc
+        '#truste-consent-track',
+        '.truste_overlay',
+        // Generic / Fanboy list
         '[id*="cookie"]',
         '[class*="cookie"]',
         '[id*="consent"]',
         '[class*="consent"]',
-        '.cc-window',
-        '#onetrust-banner-sdk',
         '.gdpr',
-        '.hystmodal'
+        '.hystmodal',
+        '#CookieConsent',
+        '#CookieBanner',
+        '#EUCookie',
+        '#GDPR-cookies-notice',
       ];
 
       await page.evaluate((selectors) => {
