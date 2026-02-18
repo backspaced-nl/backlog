@@ -15,8 +15,10 @@ interface ProjectCardProps {
   variant?: 'grid' | 'list';
   onDelete?: (id: string) => void;
   index?: number;
-  /** Optional leading cell for list variant (e.g. drag handle) */
-  leadingCell?: React.ReactNode;
+  /** Optional checkbox cell for list variant (bulk selection) */
+  checkboxCell?: React.ReactNode;
+  /** Optional element before Edit/Delete in actions cell (e.g. drag handle) */
+  actionsPrefix?: React.ReactNode;
   /** Optional drag handle for grid variant (sortable) */
   dragHandle?: React.ReactNode;
   /** Optional ref, style, className for list variant tr (sortable) */
@@ -31,7 +33,8 @@ export function ProjectCard({
   variant = 'grid',
   onDelete,
   index,
-  leadingCell,
+  checkboxCell,
+  actionsPrefix,
   dragHandle,
   trRef,
   trStyle,
@@ -165,51 +168,58 @@ export function ProjectCard({
     <tr
       ref={trRef}
       style={trStyle}
-      className={trClassName ?? 'hover:bg-[var(--bg)]/60 transition-colors'}
+      className={`group border-b border-[var(--border)] last:border-b-0 ${trClassName ?? 'hover:bg-[var(--highlight)]/40 transition-colors duration-150'}`}
     >
-      {leadingCell != null ? <td className="w-10">{leadingCell}</td> : null}
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm font-medium text-[var(--foreground)]">{project.title}</div>
-        {project.screenshotLocked && (
-          <div className="mt-1 flex items-center text-xs text-[var(--foreground-muted)]">
-            <LockClosedIcon className="h-3 w-3 mr-1" />
-            Screenshot locked
+      {checkboxCell != null ? (
+        <td className="w-12 pl-4 py-4 align-middle">
+          <div className="flex items-center justify-center w-5 h-5">{checkboxCell}</div>
+        </td>
+      ) : null}
+      <td className="px-5 py-4">
+        <div className="flex flex-col gap-1">
+          <div className="text-[15px] font-medium text-[var(--foreground)] tracking-tight">
+            {project.title}
           </div>
-        )}
+          {project.screenshotLocked && (
+            <span className="inline-flex items-center gap-1 w-fit px-2 py-0.5 text-[11px] font-medium text-[var(--foreground-muted)] bg-[var(--highlight)]/80 rounded-md">
+              <LockClosedIcon className="h-3 w-3" />
+              Screenshot locked
+            </span>
+          )}
+        </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-5 py-4">
         {project.url && (
           <a
             href={project.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-sm text-[var(--foreground-muted)] hover:text-[var(--accent)]"
+            className="inline-flex items-center gap-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--accent)] transition-colors"
             title={project.url}
           >
             <span className="truncate max-w-[200px]">
               {project.url}
             </span>
-            <ArrowTopRightOnSquareIcon className="h-3 w-3 flex-shrink-0" />
+            <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5 flex-shrink-0 opacity-60" />
           </a>
         )}
       </td>
-      <td className="px-6 py-4">
-        <div className="flex flex-wrap gap-1">
+      <td className="px-5 py-4">
+        <div className="flex flex-wrap gap-1.5">
           {project.tags.map((tag) => (
             <TagDisplay key={tag} tag={tag} variant="pill" />
           ))}
         </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-[var(--foreground-muted)]">{project.partner || '-'}</div>
+      <td className="px-5 py-4 text-sm text-[var(--foreground-muted)]">
+        {project.partner || '—'}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-[var(--foreground-muted)]">
-          {project.completionDate ? new Date(project.completionDate).toLocaleDateString() : '-'}
-        </div>
+      <td className="px-5 py-4 text-sm text-[var(--foreground-muted)]">
+        {project.completionDate ? new Date(project.completionDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <div className="flex justify-end gap-2">
+      <td className="px-5 py-4 text-right">
+        <div className="flex justify-end items-center gap-2">
+          {actionsPrefix}
           <Link
             href={`/admin/edit/${project.id}`}
             className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-[var(--radius)] text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]"

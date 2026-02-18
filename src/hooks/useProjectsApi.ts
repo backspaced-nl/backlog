@@ -128,6 +128,30 @@ export function useProjectsApi() {
     }
   }, []);
 
+  // Bulk delete projects
+  const deleteProjects = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return true;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) throw new Error('Failed to delete projects');
+      await res.json();
+      const idSet = new Set(ids);
+      setProjects(prev => prev.filter(p => !idSet.has(p.id)));
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     projects,
     loading,
@@ -137,6 +161,7 @@ export function useProjectsApi() {
     createProject,
     updateProject,
     deleteProject,
+    deleteProjects,
     reorderProjects,
     setProjects, // for manual updates if needed
   };

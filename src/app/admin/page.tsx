@@ -19,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Bars3Icon, LockClosedIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
+import { Bars3Icon, LockClosedIcon, Squares2X2Icon, TrashIcon } from '@heroicons/react/24/outline';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { SearchInput } from '@/components/SearchInput';
 import { PartnerSelect } from '@/components/PartnerSelect';
@@ -34,9 +34,11 @@ type AdminTab = 'visible' | 'hidden';
 function SortableProjectRow({
   project,
   onDelete,
+  checkboxCell,
 }: {
   project: Project;
   onDelete: (id: string) => void;
+  checkboxCell?: React.ReactNode;
 }) {
   const {
     attributes,
@@ -54,11 +56,12 @@ function SortableProjectRow({
 
   const dragHandle = (
     <div
-      className="cursor-grab active:cursor-grabbing px-2 py-1 text-[var(--foreground-muted)] hover:text-[var(--foreground)] inline-flex"
+      className="cursor-grab active:cursor-grabbing p-1.5 rounded text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--highlight)]/50 inline-flex transition-colors opacity-60 group-hover:opacity-100"
       {...attributes}
       {...listeners}
+      title="Sleep om te herordenen"
     >
-      <Bars3Icon className="h-5 w-5" aria-hidden />
+      <Bars3Icon className="h-4 w-4" aria-hidden />
     </div>
   );
 
@@ -67,23 +70,25 @@ function SortableProjectRow({
       project={project}
       variant="list"
       onDelete={onDelete}
-      leadingCell={dragHandle}
+      checkboxCell={checkboxCell}
+      actionsPrefix={dragHandle}
       trRef={setNodeRef}
       trStyle={style}
-      trClassName={`hover:bg-[var(--bg)]/60 transition-colors ${isDragging ? 'opacity-50 bg-[var(--bg)]' : ''}`}
+      trClassName={isDragging ? 'opacity-60 bg-[var(--highlight)] shadow-sm' : undefined}
     />
   );
 }
 
 function AdminContent() {
-  const { projects, fetchProjects, deleteProject, reorderProjects, setProjects, error } = useProjectsApi();
+  const { projects, fetchProjects, deleteProjects, reorderProjects, setProjects, error } = useProjectsApi();
   const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminTab>('visible');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+  const [idsToDelete, setIdsToDelete] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const searchParams = useSearchParams();
   const {
     filteredProjects,
@@ -135,10 +140,34 @@ function AdminContent() {
     }
   }, [fetchProjects]);
 
-  const handleDelete = async (id: string) => {
-    setProjectToDelete(id);
+  const handleDelete = (id: string) => {
+    setIdsToDelete([id]);
     setShowDeleteModal(true);
     setDeleteError(null);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    setIdsToDelete(Array.from(selectedIds));
+    setShowDeleteModal(true);
+    setDeleteError(null);
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === projectsToShow.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(projectsToShow.map(p => p.id)));
+    }
   };
 
   const sensors = useSensors(
@@ -181,15 +210,20 @@ function AdminContent() {
   );
 
   const confirmDelete = async () => {
-    if (!projectToDelete) return;
+    if (idsToDelete.length === 0) return;
     setIsDeleting(true);
     setDeleteError(null);
     try {
-      const success = await deleteProject(projectToDelete);
-      if (!success) throw new Error('Failed to delete project');
+      const success = await deleteProjects(idsToDelete);
+      if (!success) throw new Error('Failed to delete projects');
       setShowDeleteModal(false);
-      setProjectToDelete(null);
-      setSuccessMessage('Project deleted successfully');
+      setIdsToDelete([]);
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        idsToDelete.forEach(id => next.delete(id));
+        return next;
+      });
+      setSuccessMessage(idsToDelete.length === 1 ? 'Project verwijderd' : `${idsToDelete.length} projecten verwijderd`);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => { setSuccessMessage(null); }, 3000);
     } catch (err) {
@@ -230,7 +264,7 @@ function AdminContent() {
         )}
 
         {/* Search, filters and tabs in one block */}
-        <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated overflow-hidden mb-8">
+        <div className="bg-[var(--bg-elevated)] rounded-xl border border-[var(--border)] shadow-elevated overflow-hidden mb-8">
           <div className="p-6">
             <div className="flex flex-col sm:flex-row gap-4 mb-4">
               <SearchInput
@@ -334,7 +368,30 @@ function AdminContent() {
           </p>
         )}
 
-        <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated overflow-hidden">
+        {selectedIds.size > 0 && (
+          <div className="mb-4 flex items-center gap-4 p-4 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border)] shadow-elevated">
+            <span className="text-sm font-medium text-[var(--accent-foreground)]">
+              {selectedIds.size} geselecteerd
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+            >
+              Selectie annuleren
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-[var(--radius)] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <TrashIcon className="h-4 w-4" />
+              Verwijder geselecteerd
+            </button>
+          </div>
+        )}
+
+        <div className="bg-[var(--bg-elevated)] rounded-xl border border-[var(--border)] shadow-elevated overflow-hidden">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -345,49 +402,71 @@ function AdminContent() {
               strategy={verticalListSortingStrategy}
             >
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-[var(--border)]">
-                  <thead className="bg-[var(--bg)]">
-                    <tr>
-                      {!filtersActive && (
-                        <th scope="col" className="w-10 px-2 py-3" aria-label="Reorder" />
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b border-[var(--border)] bg-[var(--bg)]/70">
+                      {isAuthenticated && (
+                        <th scope="col" className="w-12 pl-4 py-3.5">
+                          <div className="flex items-center justify-center w-5 h-5">
+                            <input
+                              type="checkbox"
+                              checked={projectsToShow.length > 0 && selectedIds.size === projectsToShow.length}
+                              onChange={toggleSelectAll}
+                              aria-label="Selecteer alle"
+                              className="checkbox-custom"
+                            />
+                          </div>
+                        </th>
                       )}
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
-                        Title
+                      <th scope="col" className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--foreground-muted)] uppercase tracking-widest">
+                        Titel
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
+                      <th scope="col" className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--foreground-muted)] uppercase tracking-widest">
                         URL
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
+                      <th scope="col" className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--foreground-muted)] uppercase tracking-widest">
                         Tags
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
+                      <th scope="col" className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--foreground-muted)] uppercase tracking-widest">
                         Partner
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
-                        Completion Date
+                      <th scope="col" className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--foreground-muted)] uppercase tracking-widest">
+                        Datum
                       </th>
-                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
-                        Actions
+                      <th scope="col" className="px-5 py-3.5 text-right text-[11px] font-semibold text-[var(--foreground-muted)] uppercase tracking-widest">
+                        Acties
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-[var(--bg-elevated)] divide-y divide-[var(--border)]">
-                    {projectsToShow.map((project) =>
-                      filtersActive ? (
+                  <tbody className="bg-[var(--bg-elevated)]">
+                    {projectsToShow.map((project) => {
+                      const checkbox = isAuthenticated ? (
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(project.id)}
+                          onChange={() => toggleSelection(project.id)}
+                          aria-label={`Selecteer ${project.title}`}
+                          className="checkbox-custom"
+                          onClick={e => e.stopPropagation()}
+                        />
+                      ) : null;
+                      return filtersActive ? (
                         <ProjectCard
                           key={project.id}
                           project={project}
                           variant="list"
                           onDelete={handleDelete}
+                          checkboxCell={checkbox}
                         />
                       ) : (
                         <SortableProjectRow
                           key={project.id}
                           project={project}
                           onDelete={handleDelete}
+                          checkboxCell={checkbox}
                         />
-                      )
-                    )}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -401,11 +480,14 @@ function AdminContent() {
         <div className="fixed inset-0 bg-[var(--foreground)]/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated-hover max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--foreground)]">Delete Project</h3>
+              <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--foreground)]">
+                {idsToDelete.length === 1 ? 'Project verwijderen' : `${idsToDelete.length} projecten verwijderen`}
+              </h3>
               <button
                 type="button"
                 onClick={() => {
                   setShowDeleteModal(false);
+                  setIdsToDelete([]);
                   setDeleteError(null);
                 }}
                 className="text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
@@ -422,7 +504,9 @@ function AdminContent() {
               </div>
             ) : (
               <p className="text-sm text-[var(--foreground-muted)] mb-6">
-                Are you sure you want to delete this project? This action cannot be undone.
+                {idsToDelete.length === 1
+                  ? 'Weet je zeker dat je dit project wilt verwijderen? Dit kan niet ongedaan worden gemaakt.'
+                  : `Weet je zeker dat je ${idsToDelete.length} projecten wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`}
               </p>
             )}
 
@@ -431,6 +515,7 @@ function AdminContent() {
                 type="button"
                 onClick={() => {
                   setShowDeleteModal(false);
+                  setIdsToDelete([]);
                   setDeleteError(null);
                 }}
                 className="px-4 py-2 text-sm font-medium text-[var(--foreground)] bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] hover:bg-[var(--border)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--border-strong)]"
@@ -452,7 +537,7 @@ function AdminContent() {
                     <span>Deleting...</span>
                   </div>
                 ) : (
-                  'Delete'
+                  'Verwijderen'
                 )}
               </button>
             </div>

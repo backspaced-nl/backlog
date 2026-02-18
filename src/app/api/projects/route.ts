@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getProjects, createProject, updateProject, deleteProject, projectFromDb, projectToDb } from '@/utils/db';
+import { getProjects, createProject, updateProject, deleteProjects, projectFromDb, projectToDb } from '@/utils/db';
 import { deleteScreenshot, screenshotExists } from '@/utils/storage';
 import { getScreenshotUrl } from '@/utils/screenshot';
 import { v4 as uuidv4 } from 'uuid';
@@ -57,37 +57,40 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    // --- Fetch website title and detect WooCommerce for E-commerce tag ---
+    // --- Single Puppeteer session: title, WooCommerce, screenshot ---
     try {
       const { withPage } = await import('@/utils/puppeteer');
-      const { title, isWooCommerce } = await withPage(async (page) => {
-        try {
-          await page.goto(body.url, {
-            waitUntil: 'domcontentloaded',
-            timeout: 10000
-          });
-        } catch (gotoError) {
-          throw gotoError;
-        }
+      const { generateScreenshotFromPage } = await import('@/utils/screenshot');
+      const result = await withPage(async (page) => {
+        await page.setViewport({
+          width: 1440,
+          height: 2000,
+          deviceScaleFactor: 1,
+        });
+        await page.goto(body.url, {
+          waitUntil: 'domcontentloaded',
+          timeout: 30000,
+        });
         const title = await page.title();
         const html = await page.content();
         const isWooCommerce = /woocommerce/i.test(html);
-        return { title, isWooCommerce };
+        let screenshotOk = false;
+        try {
+          await generateScreenshotFromPage(page, { id: projectId });
+          screenshotOk = true;
+        } catch {
+          // keep title and WooCommerce even if screenshot fails
+        }
+        return { title, isWooCommerce, screenshotOk };
       });
-      newProject.title = title;
-      if (isWooCommerce) {
+      newProject.title = result.title;
+      if (result.isWooCommerce) {
         const baseTags = body.tags || [];
         newProject.tags = baseTags.includes('E-commerce') ? baseTags : [...baseTags, 'E-commerce'];
       }
+      newProject.screenshotLocked = result.screenshotOk;
     } catch {
       newProject.title = '';
-    }
-    // --- Generate screenshot ---
-    try {
-      const { generateScreenshot } = await import('@/utils/screenshot');
-      await generateScreenshot({ id: projectId, url: body.url, title: '', tags: [] });
-      newProject.screenshotLocked = true;
-    } catch {
       newProject.screenshotLocked = false;
     }
     const dbRow = projectToDb(newProject);
@@ -135,13 +138,19 @@ export async function DELETE(request: Request) {
   if (authError) return authError;
 
   try {
-    const { id } = await request.json();
-    try {
-      await deleteScreenshot(id);
-    } catch {
-      // ignore
+    const body = await request.json();
+    const ids = body.ids ?? (body.id ? [body.id] : []);
+    if (ids.length === 0) {
+      return NextResponse.json({ error: 'id or ids required' }, { status: 400 });
     }
-    await deleteProject(id);
+    for (const id of ids) {
+      try {
+        await deleteScreenshot(id);
+      } catch {
+        // ignore
+      }
+    }
+    await deleteProjects(ids);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });

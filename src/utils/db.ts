@@ -122,6 +122,11 @@ export async function deleteProject(id: string) {
   await pool.query(`DELETE FROM projects WHERE id = $1`, [id]);
 }
 
+export async function deleteProjects(ids: string[]) {
+  if (ids.length === 0) return;
+  await pool.query(`DELETE FROM projects WHERE id = ANY($1::uuid[])`, [ids]);
+}
+
 export async function reorderProjects(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
   await pool.query(
