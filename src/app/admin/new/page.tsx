@@ -9,6 +9,7 @@ export default function NewProjectPage() {
   const { createProject } = useProjectsApi();
   const router = useRouter();
   const [url, setUrl] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -20,7 +21,7 @@ export default function NewProjectPage() {
     setMessage(null);
 
     try {
-      const project = await createProject({ url });
+      const project = await createProject({ url, isPrivate });
       if (!project) throw new Error('Failed to create project');
       router.replace(`/admin/edit/${project.id}`);
     } catch (err) {
@@ -68,6 +69,25 @@ export default function NewProjectPage() {
               <p className="mt-2 text-sm text-[var(--foreground-muted)]">
                 Enter the URL of your project. We&apos;ll automatically fetch the title and generate a screenshot.
               </p>
+            </div>
+
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsPrivate(!isPrivate)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 ${
+                  isPrivate ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-[var(--bg-elevated)] transition-transform ${
+                    isPrivate ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className="text-sm text-[var(--foreground)]">
+                Verborgen (aparte sectie)
+              </span>
             </div>
 
             <div className="mt-6 flex justify-end gap-3">

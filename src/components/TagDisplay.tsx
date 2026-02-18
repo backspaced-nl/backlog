@@ -30,7 +30,7 @@ export function TagDisplay({
         onClick={() => onClick(tag)}
         className={baseStyles[variant]}
       >
-        {tag} {count !== undefined && `(${count})`}
+        {tag} {count !== undefined && count > 0 && `(${count})`}
       </button>
     );
   }

@@ -7,6 +7,7 @@ export interface Project {
   url: string;
   screenshotLocked?: boolean;
   screenshotError?: string | null;
+  isPrivate?: boolean;
   updatedAt?: string;
   createdAt?: string;
   screenshotUrl?: string;

@@ -38,7 +38,7 @@ export default function EditProjectPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [screenshotError, setScreenshotError] = useState<string | null>(null);
-  const suggestedPartners: string[] = [];
+  const [allPartnersFromDb, setAllPartnersFromDb] = useState<string[]>([]);
 
   useEffect(() => {
     const loadProject = async () => {
@@ -57,12 +57,14 @@ export default function EditProjectPage() {
         }
         setProject(data.project);
 
-        // Fetch all projects to derive unique tags for suggestions
+        // Fetch all projects to derive unique tags and partners for suggestions
         const projectsRes = await fetch('/api/projects');
         if (projectsRes.ok) {
           const { projects: allProjects } = await projectsRes.json();
           const tags = Array.from(new Set((allProjects as Project[]).flatMap((p) => p.tags))).sort();
           setAllTagsFromDb(tags);
+          const partners = Array.from(new Set((allProjects as Project[]).map((p) => p.partner).filter((p): p is string => Boolean(p)))).sort();
+          setAllPartnersFromDb(partners);
         }
 
         // Check for success message in localStorage
@@ -118,6 +120,7 @@ export default function EditProjectPage() {
           partner: project.partner,
           url: project.url,
           screenshotLocked: project.screenshotLocked,
+          isPrivate: project.isPrivate,
           updatedAt: new Date().toISOString()
         }),
       });
@@ -186,23 +189,21 @@ export default function EditProjectPage() {
 
   const handlePartnerChange = (value: string) => {
     setProject({ ...project, partner: value });
-    
+
     if (value.length > 0) {
-      const filtered = suggestions.filter(partner =>
+      const filtered = allPartnersFromDb.filter(partner =>
         partner.toLowerCase().includes(value.toLowerCase())
       );
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
-      // Show all available partners when input is empty
-      setSuggestions(suggestedPartners);
+      setSuggestions(allPartnersFromDb);
       setShowSuggestions(true);
     }
   };
 
   const handlePartnerFocus = () => {
-    // Show all available partners when input is focused
-    setSuggestions(suggestedPartners);
+    setSuggestions(allPartnersFromDb);
     setShowSuggestions(true);
   };
 
@@ -441,16 +442,17 @@ export default function EditProjectPage() {
                   {showSuggestions && suggestions.length > 0 && (
                     <div
                       ref={suggestionsRef}
-                      className="absolute z-10 mt-1 w-full bg-[var(--bg-elevated)] rounded-lg shadow-lg border border-[var(--border)] max-h-60 overflow-auto"
+                      className="absolute z-10 mt-1 w-full bg-[var(--bg-elevated)] shadow-lg rounded-lg border border-[var(--border)] overflow-hidden"
                     >
                       {suggestions.map((partner) => (
-                        <div
+                        <button
                           key={partner}
-                          className="px-4 py-2 hover:bg-[var(--accent-muted)] cursor-pointer"
+                          type="button"
                           onClick={() => handleSuggestionClick(partner)}
+                          className="w-full text-left px-4 py-2 text-sm text-[var(--foreground)] hover:bg-[var(--border)]"
                         >
                           {partner}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -519,7 +521,7 @@ export default function EditProjectPage() {
                         className="block w-full px-3 py-2 border border-[var(--border)] rounded-lg text-sm placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                       />
                       {suggestedTags.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-[var(--bg-elevated)] shadow-lg rounded-lg border border-[var(--border)]">
+                        <div className="absolute z-10 mt-1 w-full bg-[var(--bg-elevated)] shadow-lg rounded-lg border border-[var(--border)] overflow-hidden">
                           {suggestedTags.map(tag => (
                             <button
                               key={tag}
@@ -552,6 +554,25 @@ export default function EditProjectPage() {
                   </button>
                   <span className="text-sm text-[var(--foreground)]">
                     Lock Screenshot
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setProject(prev => ({ ...prev, isPrivate: !prev.isPrivate }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 ${
+                      project.isPrivate ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-[var(--bg-elevated)] transition-transform ${
+                        project.isPrivate ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className="text-sm text-[var(--foreground)]">
+                    Verborgen (aparte sectie)
                   </span>
                 </div>
               </div>

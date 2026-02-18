@@ -41,6 +41,7 @@ export async function POST(request: Request) {
       tags: body.tags || [],
       partner: body.partner || '',
       screenshotLocked: false, // Start unlocked
+      isPrivate: body.isPrivate ?? false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

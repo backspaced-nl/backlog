@@ -15,6 +15,7 @@ export type ProjectDb = {
   completion_date?: string;
   screenshot_locked?: boolean;
   screenshot_error?: string | null;
+  is_private?: boolean;
   created_at?: string;
   updated_at?: string;
   position?: number;
@@ -33,6 +34,7 @@ export function projectFromDb(
     completionDate: db.completion_date,
     screenshotLocked: db.screenshot_locked,
     screenshotError: db.screenshot_error,
+    isPrivate: db.is_private ?? false,
     createdAt: db.created_at,
     updatedAt: db.updated_at,
     position: db.position,
@@ -52,6 +54,7 @@ export function projectToDb(
     completion_date: project.completionDate,
     screenshot_locked: project.screenshotLocked,
     screenshot_error: project.screenshotError,
+    is_private: project.isPrivate ?? false,
     created_at: project.createdAt,
     updated_at: project.updatedAt,
     position: project.position,
@@ -75,8 +78,8 @@ export async function getProjectById(id: string) {
 
 export async function createProject(row: ProjectDb) {
   const { rows } = await pool.query<ProjectDb>(
-    `INSERT INTO projects (id, title, url, tags, partner, completion_date, screenshot_locked, screenshot_error, created_at, updated_at, position)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, COALESCE((SELECT MAX(position) FROM projects), 0) + 1)
+    `INSERT INTO projects (id, title, url, tags, partner, completion_date, screenshot_locked, screenshot_error, is_private, created_at, updated_at, position)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, COALESCE((SELECT MAX(position) FROM projects), 0) + 1)
      RETURNING *`,
     [
       row.id,
@@ -87,6 +90,7 @@ export async function createProject(row: ProjectDb) {
       row.completion_date ?? '',
       row.screenshot_locked ?? false,
       row.screenshot_error ?? null,
+      row.is_private ?? false,
       row.created_at ?? new Date().toISOString(),
       row.updated_at ?? new Date().toISOString(),
     ]
@@ -98,7 +102,7 @@ export async function updateProject(id: string, data: Partial<ProjectDb>) {
   const fields: string[] = [];
   const values: unknown[] = [];
   let i = 1;
-  const allowed = ['title', 'url', 'tags', 'partner', 'completion_date', 'screenshot_locked', 'screenshot_error', 'updated_at', 'position'];
+  const allowed = ['title', 'url', 'tags', 'partner', 'completion_date', 'screenshot_locked', 'screenshot_error', 'is_private', 'updated_at', 'position'];
   for (const [k, v] of Object.entries(data)) {
     if (allowed.includes(k) && v !== undefined) {
       fields.push(`${k} = $${i++}`);

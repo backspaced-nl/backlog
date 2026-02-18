@@ -19,14 +19,17 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Bars3Icon } from '@heroicons/react/24/outline';
+import { Bars3Icon, LockClosedIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { SearchInput } from '@/components/SearchInput';
 import { PartnerSelect } from '@/components/PartnerSelect';
 import { TagDisplay } from '@/components/TagDisplay';
 import { ProjectCard } from '@/components/ProjectCard';
 import { useProjectsApi } from '@/hooks/useProjectsApi';
+import { useAuth } from '@/hooks/useAuth';
 import type { Project } from '@/types/project';
+
+type AdminTab = 'visible' | 'hidden';
 
 function SortableProjectRow({
   project,
@@ -74,6 +77,8 @@ function SortableProjectRow({
 
 function AdminContent() {
   const { projects, fetchProjects, deleteProject, reorderProjects, setProjects, error } = useProjectsApi();
+  const { isAuthenticated } = useAuth();
+  const [activeTab, setActiveTab] = useState<AdminTab>('visible');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -82,6 +87,7 @@ function AdminContent() {
   const searchParams = useSearchParams();
   const {
     filteredProjects,
+    filteredWorkProjects,
     searchQuery,
     setSearchQuery,
     selectedTag,
@@ -91,7 +97,16 @@ function AdminContent() {
     allTags,
     allPartners,
     getTagCount
-  } = useProjectFilters({ projects });
+  } = useProjectFilters({
+    projects,
+    tabFilter: activeTab,
+  });
+
+  const filtersActive = selectedTag !== 'All' || !!selectedPartner || !!searchQuery;
+  const visibleProjects = filtersActive ? filteredProjects : projects.filter(p => !p.isPrivate);
+  const hiddenProjects = filtersActive ? filteredWorkProjects : projects.filter(p => p.isPrivate);
+  const projectsToShow = activeTab === 'visible' ? visibleProjects : hiddenProjects;
+  const sortableIds = projectsToShow.map(p => p.id);
 
   useEffect(() => {
     const message = searchParams.get('message');
@@ -126,8 +141,6 @@ function AdminContent() {
     setDeleteError(null);
   };
 
-  const filtersActive = selectedTag !== 'All' || !!selectedPartner || !!searchQuery;
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -138,12 +151,18 @@ function AdminContent() {
       const { active, over } = event;
       if (!over || active.id === over.id) return;
 
-      const oldOrder = projects.map(p => p.id);
-      const oldIndex = oldOrder.indexOf(active.id as string);
-      const newIndex = oldOrder.indexOf(over.id as string);
+      const oldList = projectsToShow.map(p => p.id);
+      const oldIndex = oldList.indexOf(active.id as string);
+      const newIndex = oldList.indexOf(over.id as string);
       if (oldIndex === -1 || newIndex === -1) return;
 
-      const newOrder = arrayMove(oldOrder, oldIndex, newIndex);
+      const reorderedList = arrayMove(oldList, oldIndex, newIndex);
+      const visibleIds = projects.filter(p => !p.isPrivate).map(p => p.id);
+      const hiddenIds = projects.filter(p => p.isPrivate).map(p => p.id);
+      const newOrder = activeTab === 'visible'
+        ? [...reorderedList, ...hiddenIds]
+        : [...visibleIds, ...reorderedList];
+
       const previousProjects = [...projects];
       setProjects(
         newOrder
@@ -158,7 +177,7 @@ function AdminContent() {
         setTimeout(() => setSuccessMessage(null), 3000);
       }
     },
-    [projects, reorderProjects, setProjects]
+    [projects, projectsToShow, activeTab, reorderProjects, setProjects]
   );
 
   const confirmDelete = async () => {
@@ -210,60 +229,59 @@ function AdminContent() {
           </div>
         )}
 
-        <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated p-6 mb-8">
-          {/* Search and Partner Filter */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <SearchInput
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search projects..."
-            />
-            <PartnerSelect
-              value={selectedPartner}
-              onChange={setSelectedPartner}
-              partners={allPartners}
-            />
-          </div>
-
-          {/* Tag Filter */}
-          <div className="flex flex-wrap gap-2">
-            {allTags.map((tag) => (
-              <TagDisplay
-                key={tag}
-                tag={tag}
-                count={getTagCount(tag)}
-                isSelected={selectedTag === tag}
-                onClick={setSelectedTag}
-                variant="filter"
+        {/* Search, filters and tabs in one block */}
+        <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--border)] shadow-elevated overflow-hidden mb-8">
+          <div className="p-6">
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <SearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Zoek projecten..."
               />
-            ))}
-          </div>
+              <PartnerSelect
+                value={selectedPartner}
+                onChange={setSelectedPartner}
+                partners={allPartners}
+              />
+            </div>
 
-          {(selectedPartner || selectedTag !== 'All') && (
-            <div className="flex flex-wrap items-center gap-2 mt-4">
-              {selectedTag !== 'All' && (
-                <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius)] text-sm bg-[var(--accent-muted)] text-[var(--accent-foreground)] border border-[var(--border)]">
-                  {selectedTag}
-                  <button
-                    onClick={() => setSelectedTag('All')}
-                    className="ml-1.5 text-[var(--accent)]/70 hover:text-[var(--accent)]"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-              {selectedPartner && (
-                <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius)] text-sm bg-[var(--accent-muted)] text-[var(--accent-foreground)] border border-[var(--border)]">
-                  {selectedPartner}
-                  <button
-                    onClick={() => setSelectedPartner('')}
-                    className="ml-1.5 text-[var(--accent)]/70 hover:text-[var(--accent)]"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-              {(selectedPartner || selectedTag !== 'All') && (
+            <div className="flex flex-wrap gap-2">
+              {allTags.map((tag) => (
+                <TagDisplay
+                  key={tag}
+                  tag={tag}
+                  count={getTagCount(tag)}
+                  isSelected={selectedTag === tag}
+                  onClick={setSelectedTag}
+                  variant="filter"
+                />
+              ))}
+            </div>
+
+            {(selectedPartner || selectedTag !== 'All') && (
+              <div className="flex flex-wrap items-center gap-2 mt-4">
+                {selectedTag !== 'All' && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius)] text-sm bg-[var(--accent-muted)] text-[var(--accent-foreground)] border border-[var(--border)]">
+                    {selectedTag}
+                    <button
+                      onClick={() => setSelectedTag('All')}
+                      className="ml-1.5 text-[var(--accent)]/70 hover:text-[var(--accent)]"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                {selectedPartner && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius)] text-sm bg-[var(--accent-muted)] text-[var(--accent-foreground)] border border-[var(--border)]">
+                    {selectedPartner}
+                    <button
+                      onClick={() => setSelectedPartner('')}
+                      className="ml-1.5 text-[var(--accent)]/70 hover:text-[var(--accent)]"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
                 <button
                   onClick={() => {
                     setSelectedTag('All');
@@ -271,16 +289,48 @@ function AdminContent() {
                   }}
                   className="text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium"
                 >
-                  Clear all
+                  Wis filters
                 </button>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
+
+          {/* Tabs - Verborgen only when logged in */}
+          <div className="flex gap-0 border-t border-[var(--border)] bg-[var(--bg)]/30">
+            <button
+              type="button"
+              onClick={() => setActiveTab('visible')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'visible'
+                  ? 'bg-[var(--bg-elevated)] text-[var(--foreground)] border-b-2 border-[var(--accent)]'
+                  : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--bg)]/50'
+              }`}
+            >
+              <Squares2X2Icon className="h-4 w-4" />
+              Zichtbaar
+              <span className="text-xs opacity-75">({visibleProjects.length})</span>
+            </button>
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('hidden')}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                  activeTab === 'hidden'
+                    ? 'bg-[var(--bg-elevated)] text-[var(--foreground)] border-b-2 border-[var(--accent)]'
+                    : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--bg)]/50'
+                }`}
+              >
+                <LockClosedIcon className="h-4 w-4" />
+                Verborgen
+                <span className="text-xs opacity-75">({hiddenProjects.length})</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {filtersActive && (
           <p className="mb-4 text-sm text-[var(--foreground-muted)]">
-            Clear filters to reorder projects.
+            Wis filters om projecten te herordenen.
           </p>
         )}
 
@@ -291,7 +341,7 @@ function AdminContent() {
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={projects.map(p => p.id)}
+              items={sortableIds}
               strategy={verticalListSortingStrategy}
             >
               <div className="overflow-x-auto">
@@ -322,22 +372,22 @@ function AdminContent() {
                     </tr>
                   </thead>
                   <tbody className="bg-[var(--bg-elevated)] divide-y divide-[var(--border)]">
-                    {filtersActive
-                      ? filteredProjects.map((project) => (
-                          <ProjectCard
-                            key={project.id}
-                            project={project}
-                            variant="list"
-                            onDelete={handleDelete}
-                          />
-                        ))
-                      : projects.map((project) => (
-                          <SortableProjectRow
-                            key={project.id}
-                            project={project}
-                            onDelete={handleDelete}
-                          />
-                        ))}
+                    {projectsToShow.map((project) =>
+                      filtersActive ? (
+                        <ProjectCard
+                          key={project.id}
+                          project={project}
+                          variant="list"
+                          onDelete={handleDelete}
+                        />
+                      ) : (
+                        <SortableProjectRow
+                          key={project.id}
+                          project={project}
+                          onDelete={handleDelete}
+                        />
+                      )
+                    )}
                   </tbody>
                 </table>
               </div>

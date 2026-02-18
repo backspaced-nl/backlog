@@ -53,9 +53,9 @@ export function ProjectCard({
   if (variant === 'grid') {
     return (
       <motion.div
-        initial={{ opacity: 0 }}
+        initial={false}
         animate={{ opacity: egg === 'red' ? 0 : 1 }}
-        transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+        transition={{ duration: 0.2 }}
         className={`group relative ${egg === 'red' ? 'hidden' : ''}`}
       >
         <a
@@ -113,7 +113,7 @@ export function ProjectCard({
                 ) : null}
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 min-h-[1.75rem]">
             {project.tags.map((tag) => (
               <span
                 key={tag}

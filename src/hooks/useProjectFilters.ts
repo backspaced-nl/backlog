@@ -6,10 +6,13 @@ interface UseProjectFiltersProps {
   initialTag?: string;
   initialPartner?: string;
   initialSearchQuery?: string;
+  /** When set, allTags, allPartners and getTagCount only consider projects in this tab */
+  tabFilter?: 'visible' | 'hidden';
 }
 
 interface UseProjectFiltersResult {
   filteredProjects: Project[];
+  filteredWorkProjects: Project[];
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   selectedTag: string;
@@ -25,46 +28,64 @@ export function useProjectFilters({
   projects,
   initialTag = 'All',
   initialPartner = '',
-  initialSearchQuery = ''
+  initialSearchQuery = '',
+  tabFilter
 }: UseProjectFiltersProps): UseProjectFiltersResult {
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [selectedTag, setSelectedTag] = useState(initialTag);
   const [selectedPartner, setSelectedPartner] = useState(initialPartner);
 
-  // Memoize derived values
-  const allTags = useMemo(() => 
-    ['All', ...new Set(projects.flatMap(project => project.tags))],
-    [projects]
+  const projectsForTab = useMemo(() => {
+    if (!tabFilter) return projects;
+    return tabFilter === 'visible'
+      ? projects.filter(p => !p.isPrivate)
+      : projects.filter(p => p.isPrivate);
+  }, [projects, tabFilter]);
+
+  const allTags = useMemo(() =>
+    ['All', ...new Set(projectsForTab.flatMap(project => project.tags))],
+    [projectsForTab]
   );
 
-  const allPartners = useMemo(() => 
-    [...new Set(projects.map(project => project.partner).filter((partner): partner is string => Boolean(partner)))],
-    [projects]
+  const allPartners = useMemo(() =>
+    [...new Set(projectsForTab.map(project => project.partner).filter((partner): partner is string => Boolean(partner)))],
+    [projectsForTab]
   );
 
   const filteredProjects = useMemo(() => {
     const query = searchQuery.toLowerCase();
     return projects.filter(project => {
-      // Search query filter
-      const matchesSearch = query === '' || 
+      if (project.isPrivate) return false;
+      const matchesSearch = query === '' ||
         project.title.toLowerCase().includes(query) ||
         project.tags.some(tag => tag.toLowerCase().includes(query)) ||
         (project.partner && project.partner.toLowerCase().includes(query)) ||
         project.url.toLowerCase().includes(query);
-      
-      // Partner filter
       const matchesPartner = selectedPartner === '' || project.partner === selectedPartner;
-      
-      // Tag filter
       const matchesTag = selectedTag === 'All' || project.tags.includes(selectedTag);
-      
+      return matchesSearch && matchesPartner && matchesTag;
+    });
+  }, [projects, searchQuery, selectedPartner, selectedTag]);
+
+  const filteredWorkProjects = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return projects.filter(project => {
+      if (!project.isPrivate) return false;
+      const matchesSearch = query === '' ||
+        project.title.toLowerCase().includes(query) ||
+        project.tags.some(tag => tag.toLowerCase().includes(query)) ||
+        (project.partner && project.partner.toLowerCase().includes(query)) ||
+        project.url.toLowerCase().includes(query);
+      const matchesPartner = selectedPartner === '' || project.partner === selectedPartner;
+      const matchesTag = selectedTag === 'All' || project.tags.includes(selectedTag);
       return matchesSearch && matchesPartner && matchesTag;
     });
   }, [projects, searchQuery, selectedPartner, selectedTag]);
 
   const getTagCount = (tag: string): number => {
+    const base = projectsForTab;
     return tag === 'All'
-      ? projects.filter(project => {
+      ? base.filter(project => {
           if (selectedPartner && project.partner !== selectedPartner) return false;
           if (searchQuery) {
             const query = searchQuery.toLowerCase();
@@ -75,7 +96,7 @@ export function useProjectFilters({
           }
           return true;
         }).length
-      : projects.filter(project => {
+      : base.filter(project => {
           if (!project.tags.includes(tag)) return false;
           if (selectedPartner && project.partner !== selectedPartner) return false;
           if (searchQuery) {
@@ -91,6 +112,7 @@ export function useProjectFilters({
 
   return {
     filteredProjects,
+    filteredWorkProjects,
     searchQuery,
     setSearchQuery,
     selectedTag,
